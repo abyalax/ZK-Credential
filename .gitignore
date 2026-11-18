@@ -1,0 +1,14 @@
+node_modules/
+dist/
+coverage/
+*.log
+.env
+.env.*
+!.env.example
+*.patch
+
+# zk-SNARK build artifacts (regenerate via scripts, never commit)
+circuits/artifacts/*
+!circuits/artifacts/.gitkeep
+*.ptau
+*.zkey
