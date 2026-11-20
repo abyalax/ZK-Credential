@@ -14,5 +14,12 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["src", "tests", "vitest.config.ts"]
+  "include": [
+    "src",
+    "tests",
+    "scripts",
+    "circuits/tests",
+    "vitest.config.ts",
+    "vitest.zk.config.ts"
+  ]
 }

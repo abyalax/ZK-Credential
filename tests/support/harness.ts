@@ -3,6 +3,7 @@ import {
   makeIssueChallenge,
   makeIssueCredential,
   makeVerifyCredential,
+  type ProofEngine,
 } from '../../src/application/index.js';
 import {
   asVerifierId,
@@ -35,14 +36,19 @@ export const gpa = (scaled: number): Gpa => {
 export const verifierA: VerifierId = asVerifierId('verifier-a');
 export const verifierB: VerifierId = asVerifierId('verifier-b');
 
+export interface HarnessOptions {
+  /** Defaults to the fake engine; pass a real one to run the same flows with real proofs. */
+  readonly proofEngine?: ProofEngine;
+}
+
 /** Wires the use cases to in-memory adapters and fakes, as a composition root would. */
-export const createHarness = () => {
+export const createHarness = (options: HarnessOptions = {}) => {
   const clock = createFakeClock();
   const randomness = createFakeRandomness();
   const credentials = createInMemoryCredentialRepository();
   const challenges = createInMemoryChallengeStore();
   const issuers = createStaticIssuerRegistry([testIssuer]);
-  const proofEngine = createFakeProofEngine();
+  const proofEngine = options.proofEngine ?? createFakeProofEngine();
   const signer = createFakeSigner();
 
   const issueCredential = makeIssueCredential({ credentials, issuers, signer, clock, randomness });
