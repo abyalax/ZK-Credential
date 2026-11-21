@@ -66,14 +66,14 @@
 
 **P2.2 Circuit**
 
-- [ ] Constraint: prover mengetahui `holderPrivateKey` dengan `Poseidon(holderPrivateKey) == holderPublicKey`
-- [ ] Test: secret salah atau kredensial milik holder lain → witness gagal
+- [x] Constraint: prover mengetahui `holderPrivateKey` dengan `Poseidon(holderPrivateKey) == holderPublicKey`
+- [x] Test: secret salah atau kredensial milik holder lain → witness gagal
 
 **P2.3 Adapter dan security test**
 
 - [x] Generate kunci holder; `HolderPrivateKey` tidak boleh ikut log atau output
-- [ ] Test: pemegang salinan kredensial tanpa private key tidak bisa membuat proof valid
-- [ ] Catat overhead (langkah ablation 2)
+- [x] Test: pemegang salinan kredensial tanpa private key tidak bisa membuat proof valid
+- [x] Catat overhead (langkah ablation 2)
 
 ## P3 - Replay Protection
 

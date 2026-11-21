@@ -132,31 +132,73 @@ const compile = (variant: string): void => {
 
 const entropy = (): string => randomBytes(32).toString('hex');
 
-const ensurePtau = async (power: number): Promise<string> => {
-  const finalPath = ptauPath(power);
-  if (existsSync(finalPath)) return finalPath;
 
-  log(`  generating local powers of tau (2^${power}, single contributor)`);
-  const dir = dirname(finalPath);
-  await mkdir(dir, { recursive: true });
-  const initial = join(dir, `pot${power}_0000.ptau`);
-  const contributed = join(dir, `pot${power}_0001.ptau`);
-
+const getPtauCurve = async (): Promise<unknown> => {
   const { curves } = snarkjs as unknown as {
-    curves: { getCurveFromName(name: string): Promise<unknown> };
+    curves: {
+      getCurveFromName(name: string): Promise<unknown>;
+    };
   };
-  const curve = await curves.getCurveFromName('bn128');
-  await snarkjs.powersOfTau.newAccumulator(curve, power, initial);
+
+  return curves.getCurveFromName('bn128');
+};
+
+const createInitialPtau = async (
+  power: number,
+  outputPath: string,
+): Promise<void> => {
+  const curve = await getPtauCurve();
+
+  await snarkjs.powersOfTau.newAccumulator(
+    curve,
+    power,
+    outputPath,
+  );
+};
+
+const contributePtau = async (
+  initialPath: string,
+  outputPath: string,
+): Promise<void> => {
   await snarkjs.powersOfTau.contribute(
-    initial,
-    contributed,
+    initialPath,
+    outputPath,
     'zk-credential local ceremony',
     entropy(),
   );
-  await snarkjs.powersOfTau.preparePhase2(contributed, finalPath);
-  await Promise.all([rm(initial, { force: true }), rm(contributed, { force: true })]);
+};
+
+const ensurePtau = async (power: number): Promise<string> => {
+  const finalPath = ptauPath(power);
+
+  if (existsSync(finalPath)) return finalPath;
+
+  log(`  generating local powers of tau (2^${power}, single contributor)`);
+
+  const dir = dirname(finalPath);
+  await mkdir(dir, { recursive: true });
+
+  const initial = join(dir, `pot${power}_0000.ptau`);
+  const contributed = join(dir, `pot${power}_0001.ptau`);
+
+  await createInitialPtau(power, initial);
+  await contributePtau(initial, contributed);
+
+  try {
+    await snarkjs.powersOfTau.preparePhase2(
+      contributed,
+      finalPath,
+    );
+  } finally {
+    await Promise.all([
+      rm(initial, { force: true }),
+      rm(contributed, { force: true }),
+    ]);
+  }
+
   return finalPath;
 };
+
 
 const ptauPowerFor = (info: snarkjs.R1CSInfoType): number => {
   const size = info.nConstraints + info.nPubInputs + info.nOutputs;

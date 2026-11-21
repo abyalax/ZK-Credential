@@ -96,9 +96,13 @@ Public signal order is the declaration order in the template (outputs first; non
 - Public signals are unchanged from `issuer` (`issuerKeyHash, gpaThreshold`): the binding is proven,
   never revealed. `holderPublicKey` and `holderPrivateKey` stay private, so two presentations of one credential
   share no holder identifier.
-- Constraint count and timing: **not yet recorded.** Run `pnpm zk:setup` and `pnpm test:zk`, then
-  fill in the delta against `issuer` (the test logs `[ablation:holder] prove+verify ... ms`).
-  Expected cost is one `Poseidon(1)` on top of `issuer`; this is an expectation, not a measurement.
+- 10,311 constraints (8,306 non-linear, 2,005 linear), 2 public signals (one public input and one
+  output), and 15 private inputs. Against `issuer` (9,896) this adds 415 constraints (+4.2%): 216
+  non-linear and 199 linear.
+- On Windows with Node 22, a valid holder proof took 1.41 s including proving and verification
+  (`[ablation:holder]` line of `tests/zk/holder-proof.test.ts`), against 1.43 s for the equivalent
+  `issuer` test. The difference is within noise of a single local run, so no time overhead is
+  claimed; repeatable benchmarks belong to P6.
 - Real-proof tests (`tests/zk/holder-proof.test.ts`) accept the owner and reject: a copy of the
   credential without the secret, guessed secrets (including `holderPublicKey` used as the secret), a credential
   issued to another holder, and a credential whose `holderPublicKey` was swapped after signing. A last test
