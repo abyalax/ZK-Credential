@@ -20,6 +20,8 @@
     "check": "pnpm typecheck && pnpm typecheck:contracts && pnpm lint && pnpm test",
     "zk:setup": "tsx scripts/zk-setup.ts",
     "test:zk": "pnpm zk:setup && vitest run --config vitest.zk.config.ts",
+    "test:security": "pnpm zk:setup && vitest run --config vitest.zk.config.ts tests/security",
+    "experiment:p5": "pnpm zk:setup && tsx experiments/scenarios/run.ts",
     "chain:node": "hardhat node",
     "chain:sync": "tsx scripts/chain-sync-verifier.ts",
     "chain:build": "hardhat build",

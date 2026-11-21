@@ -89,3 +89,35 @@ Run the ZK setup process followed by ZK-specific tests.
 ```bash
 pnpm test:zk
 ```
+
+Run security tests with real Groth16 proofs against all circuit variants.
+
+```bash
+pnpm test:security
+```
+
+Run P5 attack-scenario experiments and generate structured results (JSON/CSV) in `experiments/results/`.
+
+```bash
+pnpm experiment:p5
+```
+
+### 7. Blockchain (Hardhat, Local)
+
+Start a local Hardhat node (offline).
+
+```bash
+pnpm chain:node
+```
+
+Deploy registry and verifier contracts to the local node.
+
+```bash
+pnpm chain:deploy
+```
+
+Build circuit and contracts, then run contract tests.
+
+```bash
+pnpm chain:test
+```

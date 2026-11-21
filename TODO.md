@@ -123,14 +123,14 @@
 
 **P5.1 Skenario** (`tests/security/` dan `experiments/scenarios/`)
 
-- [ ] Valid diterima; IPK di bawah threshold ditolak
-- [ ] Kredensial dimanipulasi, tanda tangan tidak valid, dan issuer tak terdaftar ditolak
-- [ ] Holder tanpa kunci gagal; replay, wrong-verifier, dan expired ditolak
-- [ ] Tambahan: public signals malformed dan input di luar field
+- [x] Valid diterima; IPK di bawah threshold ditolak
+- [x] Kredensial dimanipulasi, tanda tangan tidak valid, dan issuer tak terdaftar ditolak
+- [x] Holder tanpa kunci gagal; replay, wrong-verifier, dan expired ditolak
+- [x] Tambahan: public signals malformed dan input di luar field
 
 **P5.2 Pengukuran**
 
-- [ ] Verification success rate dan attack rejection rate per konfigurasi, disimpan terstruktur (JSON/CSV) di `experiments/results/`
+- [x] Verification success rate dan attack rejection rate per konfigurasi, disimpan terstruktur (JSON/CSV) di `experiments/results/`
 
 ## P6 - Performance Evaluation dan Ablation
 
