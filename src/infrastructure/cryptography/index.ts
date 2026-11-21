@@ -1,7 +1,9 @@
 export {
   BN254_FIELD_ORDER,
   credentialCommitmentInputs,
+  encodeChallenge,
   encodeCredentialText,
+  encodeVerifierId,
   parseFieldElement,
 } from './credential-encoding.js';
 export { cryptoRandomness } from './crypto-randomness.js';

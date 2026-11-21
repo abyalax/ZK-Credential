@@ -26,7 +26,7 @@ export const testHolderPublicKey = asHolderPublicKey('12345');
 export const testHolderPrivateKey = asHolderPrivateKey('holder-1-secret-key');
 
 export interface FakeClock extends Clock {
-  advance(ms: number): void;
+  advance: (ms: number) => void;
 }
 
 export const createFakeClock = (start = 1_700_000_000_000): FakeClock => {

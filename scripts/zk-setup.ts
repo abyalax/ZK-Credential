@@ -136,7 +136,7 @@ const entropy = (): string => randomBytes(32).toString('hex');
 const getPtauCurve = async (): Promise<unknown> => {
   const { curves } = snarkjs as unknown as {
     curves: {
-      getCurveFromName(name: string): Promise<unknown>;
+      getCurveFromName: (name: string)=> Promise<unknown>;
     };
   };
 

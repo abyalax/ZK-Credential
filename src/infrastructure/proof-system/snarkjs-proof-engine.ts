@@ -20,7 +20,7 @@ export interface SnarkjsProofEngineOptions {
 
 export interface SnarkjsProofEngine extends ProofEngine {
   /** Stops snarkjs' worker threads so the process can exit. */
-  close(): Promise<void>;
+  close: ()=> Promise<void>;
 }
 
 /** What `Proof.payload` holds: the snarkjs proof and the circuit's public signals. */
@@ -127,8 +127,14 @@ const verifyProof = async (
   if (proof.protocol !== 'groth16') return false;
   const content = parsePayload(proof.payload);
   if (!content) return false;
-  if (!sameSignals(await variant.expectedPublicSignals(proof.publicSignals), content.publicSignals))
+  // Claims come from an untrusted holder: one that cannot be encoded is simply an invalid proof.
+  let expected: readonly string[];
+  try {
+    expected = await variant.expectedPublicSignals(proof.publicSignals);
+  } catch {
     return false;
+  }
+  if (!sameSignals(expected, content.publicSignals)) return false;
   try {
     return await snarkjs.groth16.verify(verificationKey, content.publicSignals, content.proof);
   } catch {

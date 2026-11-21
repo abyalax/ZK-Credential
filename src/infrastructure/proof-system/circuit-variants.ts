@@ -4,6 +4,8 @@ import type { ProofGenerationInput } from '../../application/index.js';
 import type { Issuer, PublicSignals } from '../../domain/index.js';
 import {
   credentialCommitmentInputs,
+  encodeChallenge,
+  encodeVerifierId,
   parseFieldElement,
 } from '../cryptography/credential-encoding.js';
 import {
@@ -18,13 +20,13 @@ import {
  */
 export interface CircuitVariant {
   readonly name: string;
-  circuitInputs(input: ProofGenerationInput, issuer?: Issuer): CircuitSignals;
+  circuitInputs:(input: ProofGenerationInput, issuer?: Issuer) => CircuitSignals;
   /**
    * The circuit's public signals, in circuit order, as implied by the claims of a proof. The
    * engine rejects a proof whose payload carries different signals than its claims, so a claim
    * can never be altered without invalidating the proof.
    */
-  expectedPublicSignals(claims: PublicSignals): readonly string[] | Promise<readonly string[]>;
+  expectedPublicSignals: (claims: PublicSignals) => readonly string[] | Promise<readonly string[]>;
 }
 
 /**
@@ -94,4 +96,29 @@ export const holderVariant: CircuitVariant = {
     holderPrivateKey: parseFieldElement(input.holderPrivateKey, 'Holder private key').toString(),
   }),
   expectedPublicSignals: issuerExpectedPublicSignals,
+};
+
+/**
+ * Issuer + holder + replay binding (the proposed model). Public signals:
+ * [issuerKeyHash, gpaThreshold, challenge, verifierId].
+ *
+ * Unlike the earlier variants, the challenge and verifier id are constrained in the circuit, so
+ * relabelling either one in the claims, or in the payload, invalidates the proof.
+ */
+export const fullVariant: CircuitVariant = {
+  name: 'full',
+  circuitInputs: (input, issuer) => ({
+    ...holderVariant.circuitInputs(input, issuer),
+    challenge: encodeChallenge(input.request.challenge).toString(),
+    verifierId: encodeVerifierId(input.request.verifierId).toString(),
+  }),
+  expectedPublicSignals: async (claims) => {
+    const [issuerKeyHash, gpaThreshold] = await issuerExpectedPublicSignals(claims);
+    return [
+      issuerKeyHash ?? '',
+      gpaThreshold ?? '',
+      encodeChallenge(claims.challenge).toString(),
+      encodeVerifierId(claims.verifierId).toString(),
+    ];
+  },
 };

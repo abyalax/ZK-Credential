@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { isCanonicalChallenge } from '../../application/index.js';
 import type { Credential } from '../../domain/index.js';
 
 /** Order of the BN254 scalar field: every circuit input must be a canonical integer below it. */
@@ -16,9 +17,8 @@ export const parseFieldElement = (value: string, label: string): bigint => {
     throw new TypeError(`${label} must be a canonical decimal integer`);
   }
   const parsed = BigInt(value);
-  if (parsed >= BN254_FIELD_ORDER) {
+  if (parsed >= BN254_FIELD_ORDER) 
     throw new TypeError(`${label} must be below the BN254 scalar field order`);
-  }
   return parsed;
 };
 
@@ -27,6 +27,19 @@ export const encodeCredentialText = (value: string): bigint =>
   BigInt(
     `0x${createHash('sha256').update('zk-credential:v1:').update(value, 'utf8').digest('hex').slice(0, 62)}`,
   );
+
+/**
+ * Challenge field element: the 31 random bytes read big-endian (always below 2^248). Rejects any
+ * other spelling, so the text and the field element are one-to-one.
+ */
+export const encodeChallenge = (challenge: string): bigint => {
+  if (!isCanonicalChallenge(challenge)) 
+    throw new TypeError('Challenge must be 31 bytes as 62 lowercase hex characters');
+  return BigInt(`0x${challenge}`);
+};
+
+/** Verifier ids are text attributes, so they use the same `F_str` encoding as the credential. */
+export const encodeVerifierId = (verifierId: string): bigint => encodeCredentialText(verifierId);
 
 export const credentialCommitmentInputs = (
   credential: Credential,

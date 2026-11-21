@@ -21,8 +21,8 @@ const issuerRegistryAbi = [
 
 export interface OnChainIssuerRegistry extends IssuerRegistry {
   /** Registers a key with the configured owner account and waits for transaction confirmation. */
-  addIssuer(publicKey: string): Promise<void>;
-  isTrusted(publicKey: Issuer['publicKey'] | string): Promise<boolean>;
+  addIssuer: (publicKey: string)=> Promise<void>;
+  isTrusted: (publicKey: Issuer['publicKey'] | string) => Promise<boolean>;
 }
 
 export interface OnChainIssuerRegistryOptions {

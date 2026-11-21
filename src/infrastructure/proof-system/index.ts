@@ -6,7 +6,7 @@ export {
   REPOSITORY_ROOT,
 } from './artifact-paths.js';
 export type { CircuitVariant } from './circuit-variants.js';
-export { holderVariant, issuerVariant, thresholdVariant } from './circuit-variants.js';
+export { fullVariant, holderVariant, issuerVariant, thresholdVariant } from './circuit-variants.js';
 export type { SnarkjsProofEngine, SnarkjsProofEngineOptions } from './snarkjs-proof-engine.js';
 export { createSnarkjsProofEngine } from './snarkjs-proof-engine.js';
 export { loadSnarkjs, terminateSnarkjs } from './snarkjs-runtime.js';

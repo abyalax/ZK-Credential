@@ -8,6 +8,7 @@ export type { IssueChallengeDeps, IssueChallengeInput } from './issue-challenge.
 export {
   CHALLENGE_RANDOM_BYTES,
   DEFAULT_CHALLENGE_TTL_MS,
+  isCanonicalChallenge,
   makeIssueChallenge,
 } from './issue-challenge.js';
 export type {

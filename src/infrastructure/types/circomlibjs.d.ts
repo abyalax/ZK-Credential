@@ -9,9 +9,9 @@ declare module 'circomlibjs' {
   export type Point = readonly [FieldElement, FieldElement];
 
   export interface Field {
-    e(value: bigint | number | string): FieldElement;
-    toObject(element: FieldElement): bigint;
-    eq(a: FieldElement, b: FieldElement): boolean;
+    e: (value: bigint | number | string)=> FieldElement;
+    toObject: (element: FieldElement)=> bigint;
+    eq: (a: FieldElement, b: FieldElement)=> boolean;
   }
 
   export interface Poseidon {
@@ -27,9 +27,9 @@ declare module 'circomlibjs' {
   export interface Eddsa {
     readonly F: Field;
     /** Derives the BabyJubJub public key (Ax, Ay) from a 32-byte private key. */
-    prv2pub(privateKey: Uint8Array): Point;
-    signPoseidon(privateKey: Uint8Array, message: FieldElement): EddsaSignature;
-    verifyPoseidon(message: FieldElement, signature: EddsaSignature, publicKey: Point): boolean;
+    prv2pub: (privateKey: Uint8Array)=> Point;
+    signPoseidon: (privateKey: Uint8Array, message: FieldElement)=> EddsaSignature;
+    verifyPoseidon: (message: FieldElement, signature: EddsaSignature, publicKey: Point)=> boolean;
   }
 
   export function buildPoseidon(): Promise<Poseidon>;

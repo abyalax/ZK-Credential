@@ -1,4 +1,5 @@
 import {
+  type CredentialSigner,
   makeGenerateProof,
   makeIssueChallenge,
   makeIssueCredential,
@@ -8,6 +9,9 @@ import {
 import {
   asVerifierId,
   type Gpa,
+  type HolderPrivateKey,
+  type HolderPublicKey,
+  type Issuer,
   type Proof,
   toGpa,
   type VerifierId,
@@ -39,7 +43,18 @@ export const verifierB: VerifierId = asVerifierId('verifier-b');
 export interface HarnessOptions {
   /** Defaults to the fake engine; pass a real one to run the same flows with real proofs. */
   readonly proofEngine?: ProofEngine;
+  /** Defaults to the fake signer; pass a real one (with its `issuer`) for real proofs. */
+  readonly signer?: CredentialSigner;
+  /** Registered issuer. Defaults to `testIssuer`, which only the fake signer matches. */
+  readonly issuer?: Issuer;
+  /** Holder key pair. Defaults to the fake keys, which only the fake engine accepts. */
+  readonly holder?: { readonly publicKey: HolderPublicKey; readonly privateKey: HolderPrivateKey };
 }
+
+const withDefaultParties = (options: HarnessOptions) => ({
+  issuer: options.issuer ?? testIssuer,
+  holder: options.holder ?? { publicKey: testHolderPublicKey, privateKey: testHolderPrivateKey },
+});
 
 /** Wires the use cases to in-memory adapters and fakes, as a composition root would. */
 export const createHarness = (options: HarnessOptions = {}) => {
@@ -47,9 +62,9 @@ export const createHarness = (options: HarnessOptions = {}) => {
   const randomness = createFakeRandomness();
   const credentials = createInMemoryCredentialRepository();
   const challenges = createInMemoryChallengeStore();
-  const issuers = createStaticIssuerRegistry([testIssuer]);
-  const proofEngine = options.proofEngine ?? createFakeProofEngine();
-  const signer = createFakeSigner();
+  const { issuer, holder } = withDefaultParties(options);
+  const issuers = createStaticIssuerRegistry([issuer]);
+  const { proofEngine = createFakeProofEngine(), signer = createFakeSigner() } = options;
 
   const issueCredential = makeIssueCredential({ credentials, issuers, signer, clock, randomness });
   const issueChallenge = makeIssueChallenge({ challenges, clock, randomness });
@@ -59,8 +74,8 @@ export const createHarness = (options: HarnessOptions = {}) => {
   /** Issues a credential with the given GPA and returns its id. */
   const issueTestCredential = async (gpaScaled = 375) => {
     const result = await issueCredential({
-      issuerId: testIssuer.id,
-      holderPublicKey: testHolderPublicKey,
+      issuerId: issuer.id,
+      holderPublicKey: holder.publicKey,
       studentNumber: '2210001',
       fullName: 'Test Student',
       degree: 'S.Kom.',
@@ -80,7 +95,7 @@ export const createHarness = (options: HarnessOptions = {}) => {
     const challenge = await issueChallenge({ verifierId });
     const proof = await generateProof({
       credentialId,
-      holderPrivateKey: testHolderPrivateKey,
+      holderPrivateKey: holder.privateKey,
       request: { verifierId, challenge: challenge.value, gpaThreshold: threshold },
     });
     if (!proof.ok) throw new Error(`proof generation failed: ${proof.error}`);

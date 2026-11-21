@@ -79,19 +79,19 @@
 
 **P3.1 Binding challenge ke proof**
 
-- [ ] `challenge` dan `verifierId` menjadi input publik yang benar-benar terikat di circuit
-- [ ] Sesuaikan `makeIssueChallenge` dengan encoding dari P0.2
+- [x] `challenge` dan `verifierId` menjadi input publik yang benar-benar terikat di circuit
+- [x] Sesuaikan `makeIssueChallenge` dengan encoding dari P0.2
 
 **P3.2 Alur hybrid**
 
-- [ ] Challenge tetap off-chain: pertahankan `ChallengeStore` dan aturan "konsumsi setelah proof valid"
-- [ ] Test: challenge pada public signals diubah → verifikasi kripto gagal, bukan hanya precondition domain
+- [x] Challenge tetap off-chain: pertahankan `ChallengeStore` dan aturan "konsumsi setelah proof valid"
+- [x] Test: challenge pada public signals diubah → verifikasi kripto gagal, bukan hanya precondition domain
 
 **P3.3 Security test dengan proof nyata**
 
-- [ ] Ulangi test replay yang ada (reuse, wrong verifier, expired, unknown, proof invalid tidak membakar challenge) dengan `ProofEngine` snarkjs
-- [ ] Tambah test race: dua verifikasi paralel atas proof yang sama, hanya satu berhasil
-- [ ] Catat overhead (langkah ablation 3)
+- [x] Ulangi test replay yang ada (reuse, wrong verifier, expired, unknown, proof invalid tidak membakar challenge) dengan `ProofEngine` snarkjs
+- [x] Tambah test race: dua verifikasi paralel atas proof yang sama, hanya satu berhasil
+- [x] Catat overhead (langkah ablation 3)
 
 ## P4 - On-Chain Verifier dan Issuer Registry (Hardhat, local)
 
