@@ -37,7 +37,10 @@ keeps `domain/` free of packages and Node built-ins.
 - Revocation is out of scope for the thesis, so there is no `revoke-credential` use case.
 - Issuer signature and holder-key binding are enforced inside the circuit. The domain only checks
   that the proof's issuer public key belongs to a registered issuer.
-- No composition root yet: it is added once the real `CredentialSigner` and on-chain adapters exist
-  (P4.5). `tests/support/harness.ts` shows the intended wiring and accepts a real `ProofEngine`.
-- Tests with real circuits live in `circuits/tests/` and `tests/zk/` and run via `pnpm test:zk`, so
-  `pnpm check` stays fast and needs no circuit build.
+- The composition root lives in `interfaces/composition/` (P4.5): `loadConfig(process.env)` plus
+  `createContainer(config)` wire the EdDSA signer, the on-chain issuer registry, and a proof engine
+  that proves with snarkjs and verifies through `CredentialVerifier`. Challenges and credentials stay
+  in memory. `tests/support/harness.ts` is the test-side equivalent and accepts a real `ProofEngine`.
+- Tests with real circuits live in `circuits/tests/` and `tests/zk/` and run via `pnpm test:zk`;
+  contract tests live in `tests/chain/` and run via `pnpm test:chain`. `pnpm check` stays fast and
+  needs neither a circuit build nor a Solidity compiler.

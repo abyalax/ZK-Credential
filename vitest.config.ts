@@ -4,7 +4,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['tests/**/*.test.ts'],
-    // Real-proof tests are slow and need built circuits; they run via `pnpm test:zk`.
-    exclude: [...configDefaults.exclude, 'tests/zk/**'],
+    // Real-proof tests run via `pnpm test:zk`, contract tests via `pnpm test:chain`.
+    exclude: [...configDefaults.exclude, 'tests/zk/**', 'tests/chain/**'],
   },
 });

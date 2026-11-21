@@ -12,3 +12,9 @@ circuits/artifacts/*
 !circuits/artifacts/.gitkeep
 *.ptau
 *.zkey
+
+# Hardhat build output and the generated verifier (regenerate via `pnpm chain:sync`, never commit)
+contracts/artifacts/
+contracts/cache/
+contracts/src/generated/
+contracts/deployments/

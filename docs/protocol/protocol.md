@@ -146,7 +146,7 @@ threshold at least the policy requirement. A challenge is consumed only after ve
 - Groth16 proofs are **malleable**: anyone can re-randomise a valid proof into a different valid one for
   the same statement. Replay protection therefore cannot rely on proof bytes being unique. It rests on
   binding a verifier-issued, single-use challenge into the public signals (`full` variant).
-- Challenge state stays off-chain (`ChallengeStore`); the issuer registry moves on-chain (P4). The
+- Challenge state stays off-chain (`ChallengeStore`); the issuer registry and the Groth16 verification are on-chain (P4, keyed by `issuerKeyHash`). The
   in-memory challenge store loses state on restart, which is a stated limitation for the thesis.
 
 ## Trust and security notes

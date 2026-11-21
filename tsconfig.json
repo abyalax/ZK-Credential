@@ -20,6 +20,7 @@
     "scripts",
     "circuits/tests",
     "vitest.config.ts",
-    "vitest.zk.config.ts"
+    "vitest.zk.config.ts",
+    "vitest.chain.config.ts"
   ]
 }

@@ -132,34 +132,23 @@ const compile = (variant: string): void => {
 
 const entropy = (): string => randomBytes(32).toString('hex');
 
-
 const getPtauCurve = async (): Promise<unknown> => {
   const { curves } = snarkjs as unknown as {
     curves: {
-      getCurveFromName: (name: string)=> Promise<unknown>;
+      getCurveFromName: (name: string) => Promise<unknown>;
     };
   };
 
   return curves.getCurveFromName('bn128');
 };
 
-const createInitialPtau = async (
-  power: number,
-  outputPath: string,
-): Promise<void> => {
+const createInitialPtau = async (power: number, outputPath: string): Promise<void> => {
   const curve = await getPtauCurve();
 
-  await snarkjs.powersOfTau.newAccumulator(
-    curve,
-    power,
-    outputPath,
-  );
+  await snarkjs.powersOfTau.newAccumulator(curve, power, outputPath);
 };
 
-const contributePtau = async (
-  initialPath: string,
-  outputPath: string,
-): Promise<void> => {
+const contributePtau = async (initialPath: string, outputPath: string): Promise<void> => {
   await snarkjs.powersOfTau.contribute(
     initialPath,
     outputPath,
@@ -185,20 +174,13 @@ const ensurePtau = async (power: number): Promise<string> => {
   await contributePtau(initial, contributed);
 
   try {
-    await snarkjs.powersOfTau.preparePhase2(
-      contributed,
-      finalPath,
-    );
+    await snarkjs.powersOfTau.preparePhase2(contributed, finalPath);
   } finally {
-    await Promise.all([
-      rm(initial, { force: true }),
-      rm(contributed, { force: true }),
-    ]);
+    await Promise.all([rm(initial, { force: true }), rm(contributed, { force: true })]);
   }
 
   return finalPath;
 };
-
 
 const ptauPowerFor = (info: snarkjs.R1CSInfoType): number => {
   const size = info.nConstraints + info.nPubInputs + info.nOutputs;

@@ -1,12 +1,13 @@
 import type { PublicClient, WalletClient } from 'viem';
 import { describe, expect, it, vi } from 'vitest';
-import { createOnChainIssuerRegistry } from '../../../src/infrastructure/index.js';
+import { createOnChainIssuerRegistry, issuerKeyHash } from '../../../src/infrastructure/index.js';
 import { testIssuer } from '../../support/fakes.js';
 
 describe('on-chain issuer registry adapter', () => {
   it('returns only configured issuers trusted by the contract', async () => {
+    const trustedHash = await issuerKeyHash(testIssuer.publicKey);
     const readContract = vi.fn(
-      async ({ args }: { args: readonly [string] }) => args[0] === testIssuer.publicKey,
+      async ({ args }: { args: readonly [bigint] }) => args[0] === trustedHash,
     );
     const registry = createOnChainIssuerRegistry({
       publicClient: { readContract } as unknown as PublicClient,
@@ -36,6 +37,12 @@ describe('on-chain issuer registry adapter', () => {
     await registry.addIssuer(testIssuer.publicKey);
 
     expect(writeContract).toHaveBeenCalledOnce();
+    expect(writeContract).toHaveBeenCalledWith(
+      expect.objectContaining({
+        functionName: 'addIssuer',
+        args: [await issuerKeyHash(testIssuer.publicKey)],
+      }),
+    );
     expect(waitForTransactionReceipt).toHaveBeenCalledWith({ hash: '0xabc' });
   });
 });

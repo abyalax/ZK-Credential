@@ -15,3 +15,4 @@ export {
 } from './eddsa-credential-signer.js';
 export type { HolderKeyPair } from './holder-keys.js';
 export { deriveHolderPublicKey, generateHolderKeyPair } from './holder-keys.js';
+export { issuerKeyHash } from './issuer-key-hash.js';

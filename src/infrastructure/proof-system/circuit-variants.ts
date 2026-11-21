@@ -1,4 +1,3 @@
-import { buildPoseidon } from 'circomlibjs';
 import type { CircuitSignals } from 'snarkjs';
 import type { ProofGenerationInput } from '../../application/index.js';
 import type { Issuer, PublicSignals } from '../../domain/index.js';
@@ -12,6 +11,7 @@ import {
   parseIssuerPublicKey,
   parseIssuerSignature,
 } from '../cryptography/eddsa-credential-signer.js';
+import { issuerKeyHash } from '../cryptography/issuer-key-hash.js';
 
 /**
  * One circuit of the ablation ladder (threshold -> +issuer -> +holder -> +replay). A variant knows
@@ -20,7 +20,7 @@ import {
  */
 export interface CircuitVariant {
   readonly name: string;
-  circuitInputs:(input: ProofGenerationInput, issuer?: Issuer) => CircuitSignals;
+  circuitInputs: (input: ProofGenerationInput, issuer?: Issuer) => CircuitSignals;
   /**
    * The circuit's public signals, in circuit order, as implied by the claims of a proof. The
    * engine rejects a proof whose payload carries different signals than its claims, so a claim
@@ -73,9 +73,7 @@ const issuerCircuitInputs = (
 };
 
 const issuerExpectedPublicSignals: CircuitVariant['expectedPublicSignals'] = async (claims) => {
-  const eddsa = await buildPoseidon();
-  const [Ax, Ay] = parseIssuerPublicKey(claims.issuerPublicKey);
-  return [eddsa.F.toObject(eddsa([Ax, Ay])).toString(), claims.gpaThreshold.toString()];
+  return [(await issuerKeyHash(claims.issuerPublicKey)).toString(), claims.gpaThreshold.toString()];
 };
 
 /** Issuer authenticity plus the GPA policy. Circom orders outputs before public inputs. */

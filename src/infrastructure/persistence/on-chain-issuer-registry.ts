@@ -1,27 +1,28 @@
 import type { Address, PublicClient, WalletClient } from 'viem';
 import type { IssuerRegistry } from '../../application/index.js';
 import type { Issuer } from '../../domain/index.js';
+import { issuerKeyHash } from '../cryptography/issuer-key-hash.js';
 
 const issuerRegistryAbi = [
   {
     type: 'function',
     name: 'addIssuer',
     stateMutability: 'nonpayable',
-    inputs: [{ name: 'publicKey', type: 'string' }],
+    inputs: [{ name: 'publicKeyHash', type: 'uint256' }],
     outputs: [],
   },
   {
     type: 'function',
     name: 'isTrusted',
     stateMutability: 'view',
-    inputs: [{ name: 'publicKey', type: 'string' }],
+    inputs: [{ name: 'publicKeyHash', type: 'uint256' }],
     outputs: [{ name: '', type: 'bool' }],
   },
 ] as const;
 
 export interface OnChainIssuerRegistry extends IssuerRegistry {
   /** Registers a key with the configured owner account and waits for transaction confirmation. */
-  addIssuer: (publicKey: string)=> Promise<void>;
+  addIssuer: (publicKey: Issuer['publicKey'] | string) => Promise<void>;
   isTrusted: (publicKey: Issuer['publicKey'] | string) => Promise<boolean>;
 }
 
@@ -33,19 +34,22 @@ export interface OnChainIssuerRegistryOptions {
   readonly issuers: readonly Issuer[];
 }
 
-/** Maps trusted on-chain public keys back to the domain's issuer IDs and display names. */
+/**
+ * Maps trusted on-chain keys back to the domain's issuer IDs and display names. The contract keys
+ * trust by `Poseidon(Ax, Ay)`, the same value the circuit exposes as `issuerKeyHash`.
+ */
 export const createOnChainIssuerRegistry = ({
   publicClient,
   walletClient,
   contractAddress,
   issuers,
 }: OnChainIssuerRegistryOptions): OnChainIssuerRegistry => {
-  const isTrusted = (publicKey: Issuer['publicKey'] | string) =>
+  const isTrusted = async (publicKey: Issuer['publicKey'] | string) =>
     publicClient.readContract({
       address: contractAddress,
       abi: issuerRegistryAbi,
       functionName: 'isTrusted',
-      args: [publicKey],
+      args: [await issuerKeyHash(publicKey)],
     });
 
   return {
@@ -63,7 +67,7 @@ export const createOnChainIssuerRegistry = ({
         address: contractAddress,
         abi: issuerRegistryAbi,
         functionName: 'addIssuer',
-        args: [publicKey],
+        args: [await issuerKeyHash(publicKey)],
         account,
         chain: walletClient.chain ?? null,
       });

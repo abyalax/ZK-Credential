@@ -17,7 +17,7 @@ export const parseFieldElement = (value: string, label: string): bigint => {
     throw new TypeError(`${label} must be a canonical decimal integer`);
   }
   const parsed = BigInt(value);
-  if (parsed >= BN254_FIELD_ORDER) 
+  if (parsed >= BN254_FIELD_ORDER)
     throw new TypeError(`${label} must be below the BN254 scalar field order`);
   return parsed;
 };
@@ -33,7 +33,7 @@ export const encodeCredentialText = (value: string): bigint =>
  * other spelling, so the text and the field element are one-to-one.
  */
 export const encodeChallenge = (challenge: string): bigint => {
-  if (!isCanonicalChallenge(challenge)) 
+  if (!isCanonicalChallenge(challenge))
     throw new TypeError('Challenge must be 31 bytes as 62 lowercase hex characters');
   return BigInt(`0x${challenge}`);
 };

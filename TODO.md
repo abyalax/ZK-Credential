@@ -97,27 +97,27 @@
 
 **P4.1 Setup Hardhat**
 
-- [ ] `contracts/` dengan Hardhat 3, jaringan lokal, semua jalan offline
-- [ ] Script `chain:node` dan `chain:deploy`
+- [x] `contracts/` dengan Hardhat 3, jaringan lokal, semua jalan offline
+- [x] Script `chain:node` dan `chain:deploy` (plus `chain:sync`, `chain:build`, `test:chain`)
 
 **P4.2 Kontrak**
 
-- [ ] `Groth16Verifier.sol` hasil generate snarkjs (tidak diedit manual)
-- [ ] `IssuerRegistry.sol`: tambah issuer (owner-only), `isTrusted`, event; tanpa revocation
-- [ ] `CredentialVerifier.sol`: cek issuer terdaftar lalu verifikasi proof; urutan public signals harus cocok dengan circuit
+- [x] `Groth16Verifier.sol` hasil generate snarkjs (tidak diedit manual); disalin oleh `pnpm chain:sync` ke `contracts/src/generated/` (gitignored)
+- [x] `IssuerRegistry.sol`: tambah issuer (owner-only), `isTrusted`, event; tanpa revocation. Kunci trust kini `issuerKeyHash = Poseidon(Ax, Ay)` agar cocok dengan public signal circuit
+- [x] `CredentialVerifier.sol`: cek issuer terdaftar lalu verifikasi proof; urutan public signals harus cocok dengan circuit
 
 **P4.3 Test kontrak**
 
-- [ ] Valid diterima; issuer tak terdaftar, proof atau signals dimanipulasi, dan non-owner yang mendaftarkan issuer ditolak
+- [ ] Valid diterima; issuer tak terdaftar, proof atau signals dimanipulasi, dan non-owner yang mendaftarkan issuer ditolak. Test ada di `tests/chain/` (`pnpm test:chain`), tetapi belum dijalankan: `solc` tidak bisa diunduh di sandbox, jalankan di mesin biasa lalu centang
 
 **P4.4 Adapter TypeScript**
 
-- [ ] `OnChainIssuerRegistry` (port `IssuerRegistry`) dan jalur verifikasi lewat kontrak
-- [ ] Library chain (viem/ethers) hanya di `infrastructure/`
+- [x] `OnChainIssuerRegistry` (port `IssuerRegistry`) dan jalur verifikasi lewat kontrak (`createOnChainProofEngine`)
+- [x] Library chain (viem/ethers) hanya di `infrastructure/` (dan `interfaces/composition/` sebagai composition root)
 
 **P4.5 Composition root**
 
-- [ ] Wiring adapter nyata sesuai catatan di `overview.md`, konfigurasi lewat env lokal
+- [x] Wiring adapter nyata sesuai catatan di `overview.md`, konfigurasi lewat env lokal (`.env.example`, `interfaces/composition/`)
 
 ## P5 - Attack-Scenario Testing
 
