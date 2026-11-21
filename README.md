@@ -32,7 +32,7 @@ pnpm cli help
 | `pnpm test:zk`                  | `zk:setup` + tests with real circuits and proofs   |
 | `pnpm chain:node`               | Local Hardhat node (offline)                       |
 | `pnpm chain:deploy`             | Deploy registry + verifier contracts to the node   |
-| `pnpm test:chain`               | Build circuit and contracts, run contract tests    |
+| `pnpm chain:test`               | Build circuit and contracts, run contract tests    |
 | `pnpm typecheck`                | `tsc --noEmit`                                     |
 | `pnpm typecheck:contracts`      | Typecheck Hardhat config with isolated tsconfig    |
 | `pnpm lint` / `pnpm format`     | Biome check / check with fixes                     |

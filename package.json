@@ -24,7 +24,7 @@
     "chain:sync": "tsx scripts/chain-sync-verifier.ts",
     "chain:build": "hardhat build",
     "chain:deploy": "tsx scripts/chain-deploy.ts",
-    "test:chain": "pnpm zk:setup full && pnpm chain:sync && pnpm chain:build && vitest run --config vitest.chain.config.ts"
+    "chain:test": "pnpm zk:setup full && pnpm chain:sync && pnpm chain:build && vitest run --config vitest.chain.config.ts"
   },
   "dependencies": {
     "circomlibjs": "0.1.7",
