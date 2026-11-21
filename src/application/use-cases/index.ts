@@ -5,7 +5,11 @@ export type {
 } from './generate-proof.js';
 export { makeGenerateProof } from './generate-proof.js';
 export type { IssueChallengeDeps, IssueChallengeInput } from './issue-challenge.js';
-export { DEFAULT_CHALLENGE_TTL_MS, makeIssueChallenge } from './issue-challenge.js';
+export {
+  CHALLENGE_RANDOM_BYTES,
+  DEFAULT_CHALLENGE_TTL_MS,
+  makeIssueChallenge,
+} from './issue-challenge.js';
 export type {
   IssueCredentialDeps,
   IssueCredentialError,

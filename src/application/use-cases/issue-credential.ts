@@ -29,14 +29,19 @@ export interface IssueCredentialInput {
   readonly gpa: number;
 }
 
-export type IssueCredentialError = CredentialError | 'ISSUER_NOT_REGISTERED';
+export type IssueCredentialError =
+  | CredentialError
+  | 'ISSUER_NOT_REGISTERED'
+  | 'SIGNER_KEY_MISMATCH';
 
 export const makeIssueCredential =
   (deps: IssueCredentialDeps) =>
   async (input: IssueCredentialInput): Promise<Result<SignedCredential, IssueCredentialError>> => {
     const trusted = await deps.issuers.list();
-    if (!trusted.some((issuer) => issuer.id === input.issuerId))
-      return err('ISSUER_NOT_REGISTERED');
+    const issuer = trusted.find((candidate) => candidate.id === input.issuerId);
+    if (!issuer) return err('ISSUER_NOT_REGISTERED');
+    if (deps.signer.publicKey && deps.signer.publicKey !== issuer.publicKey)
+      return err('SIGNER_KEY_MISMATCH');
 
     const created = createCredential({
       ...input,

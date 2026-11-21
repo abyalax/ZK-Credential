@@ -26,6 +26,7 @@ const CIRCUITS_SRC = join(REPOSITORY_ROOT, 'circuits', 'src');
 const VARIANTS_DIR = join(CIRCUITS_SRC, 'variants');
 /** Smallest ptau worth generating; small circuits all share it. */
 const MIN_PTAU_POWER = 8;
+const GENERATE_WASM = process.platform !== 'win32';
 
 const require = createRequire(import.meta.url);
 
@@ -42,15 +43,15 @@ const listCircomFiles = async (dir: string): Promise<string[]> => {
       return entry.name.endsWith('.circom') ? [path] : [];
     }),
   );
-  return nested.flat().sort();
+  return nested.flat().sort((a, b) => a.localeCompare(b));
 };
 
 const hashSources = async (): Promise<string> => {
   const hash = createHash('sha256');
-  for (const file of await listCircomFiles(CIRCUITS_SRC)) {
-    hash.update(relative(CIRCUITS_SRC, file));
-    hash.update(await readFile(file));
-  }
+  await Promise.all((await listCircomFiles(CIRCUITS_SRC)).map(async (file) => {
+    hash.update(relative(CIRCUITS_SRC,file))
+    hash.update(await readFile(file))
+  }))
   return hash.digest('hex');
 };
 
@@ -58,7 +59,7 @@ const isUpToDate = async (variant: string, sourceHash: string): Promise<boolean>
   const paths = circuitArtifactPaths(variant);
   const required = [
     paths.r1cs,
-    // paths.wasm, // Skip wasm check for now due to circom2 bug on Windows
+    ...(GENERATE_WASM ? [paths.wasm] : []),
     paths.zkey,
     paths.verificationKey,
     paths.solidityVerifier,
@@ -69,38 +70,57 @@ const isUpToDate = async (variant: string, sourceHash: string): Promise<boolean>
 };
 
 /**
- * circom2 is circom compiled to WASM. It only sees paths relative to its working directory, so it
- * must run from the repository root with `-l node_modules` to find circomlib.
+ * circom2 is Circom compiled to WASM. Run from the repository root so includes resolve on both
+ * Windows and Linux.
  */
-const compile = (variant: string, outDir: string): void => {
+const compile = (variant: string): void => {
   const circom2 = require.resolve('circom2/cli.js');
-  const source = join(VARIANTS_DIR, `${variant}.circom`);
+  let nativeCompiler: string | undefined;
   try {
-    execFileSync(
-      process.execPath,
-      [
-        circom2,
-        join('variants', `${variant}.circom`),
-        '--r1cs',
-        '--sym',
-        '-l',
-        'templates',
-        '-l',
-        relative(CIRCUITS_SRC, join(REPOSITORY_ROOT, 'node_modules')),
-      ],
-      { cwd: CIRCUITS_SRC, encoding: 'utf8', stdio: 'inherit' },
-    );
+    execFileSync('/circom', ['--version'], { stdio: 'ignore' });
+    nativeCompiler = '/circom';
+  } catch {
+    // Fall back to the pnpm-installed WASM compiler when native Circom is unavailable.
+  }
+  const args = [
+    join('circuits', 'src', 'variants', `${variant}.circom`),
+    '--r1cs',
+    '--sym',
+    ...(GENERATE_WASM ? ['--wasm'] : []),
+    '-o',
+    join('circuits', 'src', 'variants'),
+    '-l',
+    join('circuits', 'src', 'templates'),
+    '-l',
+    'node_modules',
+  ];
+  try {
+    if (nativeCompiler) {
+      execFileSync(nativeCompiler, args, { cwd: REPOSITORY_ROOT, stdio: 'inherit' });
+    } else {
+      execFileSync(process.execPath, [circom2, ...args], {
+        cwd: REPOSITORY_ROOT,
+        stdio: 'inherit',
+      });
+    }
   } catch (error) {
-    // Ignore error if r1cs file was created
-    if (!existsSync(join(VARIANTS_DIR, `${variant}.r1cs`))) {
+    if (
+      !(
+        existsSync(join(VARIANTS_DIR, `${variant}.r1cs`)) &&
+        (!GENERATE_WASM || existsSync(join(VARIANTS_DIR, `${variant}_js`, `${variant}.wasm`)))
+      )
+    ) {
       const output = error as { stdout?: string; stderr?: string };
       throw new Error(
-        `circom2 failed for "${variant}":\n${output.stdout ?? ''}${output.stderr ?? ''}`,
+        `Circuit compilation failed for "${variant}": ${output.stderr ?? 'missing R1CS/WASM output'}`,
       );
     }
   }
-  // Skip wasm compilation for now due to circom2 bug on Windows
-  log('    wasm compilation skipped (known issue with circom2 on Windows)');
+  if (GENERATE_WASM && !existsSync(join(VARIANTS_DIR, `${variant}_js`, `${variant}.wasm`))) {
+    throw new Error(
+      `Circuit "${variant}" has no WASM witness generator. Install native Circom (recommended on Windows) and rerun pnpm zk:setup.`,
+    );
+  }
 };
 
 const entropy = (): string => randomBytes(32).toString('hex');
@@ -148,7 +168,7 @@ const buildVariant = async (variant: string, sourceHash: string): Promise<void> 
   await mkdir(paths.directory, { recursive: true });
 
   log('  compiling');
-  compile(variant, paths.directory);
+  compile(variant);
 
   // Move compiled files from CIRCUITS_SRC/variants to paths.directory
   const compiledR1cs = join(VARIANTS_DIR, `${variant}.r1cs`);
@@ -157,11 +177,11 @@ const buildVariant = async (variant: string, sourceHash: string): Promise<void> 
   await rename(compiledR1cs, paths.r1cs);
   await rename(compiledSym, join(paths.directory, `${variant}.sym`));
 
-  // Clean up empty wasm directory if it exists
+  // Keep WASM beside the circuit artifacts on supported platforms.
   const compiledWasmDir = join(VARIANTS_DIR, `${variant}_js`);
-  if (existsSync(compiledWasmDir)) {
-    await rm(compiledWasmDir, { recursive: true, force: true });
-  }
+  if (existsSync(compiledWasmDir))
+    await rename(compiledWasmDir, join(paths.directory, `${variant}_js`));
+  if (!GENERATE_WASM) log('    wasm compilation skipped (known issue with circom2 on Windows)');
 
   const info = await snarkjs.r1cs.info(paths.r1cs);
   log(
@@ -204,7 +224,7 @@ const main = async (): Promise<void> => {
   const available = (await readdir(VARIANTS_DIR))
     .filter((file) => file.endsWith('.circom'))
     .map((file) => basename(file, '.circom'))
-    .sort();
+    .sort((a, b) => a.localeCompare(b));
   const unknown = requested.filter((variant) => !available.includes(variant));
   if (unknown.length > 0) {
     throw new Error(
@@ -216,15 +236,15 @@ const main = async (): Promise<void> => {
   await mkdir(DEFAULT_ARTIFACTS_DIR, { recursive: true });
   const sourceHash = await hashSources();
 
-  for (const variant of variants) {
+  await Promise.all(variants.map(async (variant) => {
     log(`[${variant}]`);
     if (!force && (await isUpToDate(variant, sourceHash))) {
       log('  up to date');
-      continue;
+      return;
     }
     await buildVariant(variant, sourceHash);
     log('  done');
-  }
+  }))
 };
 
 try {

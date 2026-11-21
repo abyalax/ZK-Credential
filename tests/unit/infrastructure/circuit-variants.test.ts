@@ -64,9 +64,9 @@ describe('thresholdVariant', () => {
 describe('circuitArtifactPaths', () => {
   it('keeps every artifact of a variant in its own directory', () => {
     const paths = circuitArtifactPaths('threshold', '/artifacts');
-    expect(paths.wasm).toBe('/artifacts/threshold/threshold_js/threshold.wasm');
-    expect(paths.zkey).toBe('/artifacts/threshold/threshold.zkey');
-    expect(paths.verificationKey).toBe('/artifacts/threshold/verification_key.json');
+    expect(paths.wasm).toBe(join('/artifacts', 'threshold', 'threshold_js', 'threshold.wasm'));
+    expect(paths.zkey).toBe(join('/artifacts', 'threshold', 'threshold.zkey'));
+    expect(paths.verificationKey).toBe(join('/artifacts', 'threshold', 'verification_key.json'));
   });
 });
 

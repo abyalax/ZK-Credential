@@ -42,18 +42,18 @@ const parsePayload = (payload: string): PayloadContent | undefined => {
   try {
     raw = JSON.parse(payload);
   } catch {
-    return undefined;
+    return;
   }
-  if (typeof raw !== 'object' || raw === null) return undefined;
+  if (typeof raw !== 'object' || raw === null) return;
   const { proof, publicSignals } = raw as Record<string, unknown>;
-  if (typeof proof !== 'object' || proof === null) return undefined;
+  if (typeof proof !== 'object' || proof === null) return;
   const { pi_a, pi_b, pi_c, protocol, curve } = proof as Record<string, unknown>;
 
-  if (protocol !== 'groth16' || curve !== 'bn128') return undefined;
-  if (!isDecimalArray(pi_a, 3) || !isDecimalArray(pi_c, 3)) return undefined;
-  if (!Array.isArray(pi_b) || pi_b.length !== 3) return undefined;
-  if (!pi_b.every((pair) => isDecimalArray(pair, 2))) return undefined;
-  if (!isDecimalArray(publicSignals)) return undefined;
+  if (protocol !== 'groth16' || curve !== 'bn128') return;
+  if (!(isDecimalArray(pi_a, 3) && isDecimalArray(pi_c, 3))) return;
+  if (!Array.isArray(pi_b) || pi_b.length !== 3) return;
+  if (!pi_b.every((pair) => isDecimalArray(pair, 2))) return;
+  if (!isDecimalArray(publicSignals)) return;
 
   return { proof: { pi_a, pi_b, pi_c, protocol, curve }, publicSignals };
 };
@@ -69,6 +69,70 @@ const assertArtifactsExist = (paths: CircuitArtifactPaths, variant: string): voi
     throw new InfrastructureError(
       `Circuit artifacts for "${variant}" are missing (${missing.join(', ')}). Run \`pnpm zk:setup\` first.`,
     );
+  }
+};
+
+interface GenerateProofParams {
+  readonly snarkjs: Awaited<ReturnType<typeof loadSnarkjs>>;
+  readonly variant: CircuitVariant;
+  readonly issuers: IssuerRegistry;
+  readonly paths: CircuitArtifactPaths;
+  readonly input: Parameters<ProofEngine['generate']>[0];
+}
+
+const generateProof = async ({
+  snarkjs,
+  variant,
+  issuers,
+  paths,
+  input,
+}: GenerateProofParams): Promise<Proof> => {
+  const { credential } = input.signedCredential;
+  const issuer = (await issuers.list()).find((candidate) => candidate.id === credential.issuerId);
+  if (!issuer)
+    throw new InfrastructureError(`Issuer "${credential.issuerId}" is not in the issuer registry`);
+
+  let generated: Awaited<ReturnType<typeof snarkjs.groth16.fullProve>>;
+  try {
+    generated = await snarkjs.groth16.fullProve(
+      variant.circuitInputs(input, issuer),
+      paths.wasm,
+      paths.zkey,
+    );
+  } catch (cause) {
+    throw new InfrastructureError(`Proof generation failed for circuit "${variant.name}"`, {
+      cause,
+    });
+  }
+
+  const publicSignals: PublicSignals = {
+    issuerPublicKey: issuer.publicKey,
+    gpaThreshold: input.request.gpaThreshold,
+    challenge: input.request.challenge,
+    verifierId: input.request.verifierId,
+  };
+  const content: PayloadContent = {
+    proof: generated.proof,
+    publicSignals: generated.publicSignals,
+  };
+  return { protocol: 'groth16', payload: asProofPayload(JSON.stringify(content)), publicSignals };
+};
+
+const verifyProof = async (
+  snarkjs: Awaited<ReturnType<typeof loadSnarkjs>>,
+  variant: CircuitVariant,
+  verificationKey: object,
+  proof: Proof,
+): Promise<boolean> => {
+  if (proof.protocol !== 'groth16') return false;
+  const content = parsePayload(proof.payload);
+  if (!content) return false;
+  if (!sameSignals(await variant.expectedPublicSignals(proof.publicSignals), content.publicSignals))
+    return false;
+  try {
+    return await snarkjs.groth16.verify(verificationKey, content.publicSignals, content.proof);
+  } catch {
+    return false;
   }
 };
 
@@ -90,66 +154,11 @@ export const createSnarkjsProofEngine = async (
 
   return {
     async generate(input) {
-      const { credential } = input.signedCredential;
-      const issuer = (await issuers.list()).find(
-        (candidate) => candidate.id === credential.issuerId,
-      );
-      if (!issuer) {
-        throw new InfrastructureError(
-          `Issuer "${credential.issuerId}" is not in the issuer registry`,
-        );
-      }
-
-      let generated: Awaited<ReturnType<typeof snarkjs.groth16.fullProve>>;
-      try {
-        generated = await snarkjs.groth16.fullProve(
-          variant.circuitInputs(input),
-          paths.wasm,
-          paths.zkey,
-        );
-      } catch (cause) {
-        // Typically an unsatisfiable statement (witness generation violates a constraint).
-        throw new InfrastructureError(`Proof generation failed for circuit "${variant.name}"`, {
-          cause,
-        });
-      }
-
-      const publicSignals: PublicSignals = {
-        issuerPublicKey: issuer.publicKey,
-        gpaThreshold: input.request.gpaThreshold,
-        challenge: input.request.challenge,
-        verifierId: input.request.verifierId,
-      };
-      const content: PayloadContent = {
-        proof: generated.proof,
-        publicSignals: generated.publicSignals,
-      };
-      const proof: Proof = {
-        protocol: 'groth16',
-        payload: asProofPayload(JSON.stringify(content)),
-        publicSignals,
-      };
-      return proof;
+      return generateProof({ snarkjs, variant, issuers, paths, input });
     },
-
     async verify(proof) {
-      if (proof.protocol !== 'groth16') return false;
-      const content = parsePayload(proof.payload);
-      if (!content) return false;
-
-      // The claims the domain checks must be exactly what the circuit proved.
-      if (!sameSignals(variant.expectedPublicSignals(proof.publicSignals), content.publicSignals)) {
-        return false;
-      }
-
-      try {
-        return await snarkjs.groth16.verify(verificationKey, content.publicSignals, content.proof);
-      } catch {
-        // A proof that makes the verifier throw is an invalid proof, not an infrastructure fault.
-        return false;
-      }
+      return verifyProof(snarkjs, variant, verificationKey, proof);
     },
-
     close: terminateSnarkjs,
   };
 };

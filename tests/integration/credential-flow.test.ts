@@ -15,6 +15,13 @@ describe('credential flow (issue -> challenge -> prove -> verify)', () => {
     expect(result.ok).toBe(true);
   });
 
+  it('issues a 31-byte challenge that fits the BN254 field without reduction', async () => {
+    const h = createHarness();
+    const challenge = await h.issueChallenge({ verifierId: verifierA });
+
+    expect(challenge.value).toMatch(/^[0-9a-f]{62}$/);
+  });
+
   it('refuses to issue for an unregistered issuer', async () => {
     const h = createHarness();
     const result = await h.issueCredential({

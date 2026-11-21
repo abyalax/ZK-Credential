@@ -6,33 +6,36 @@
   "license": "MIT",
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.13.0"
   },
   "scripts": {
     "cli": "tsx src/interfaces/cli/main.ts",
     "typecheck": "tsc --noEmit",
+    "typecheck:contracts": "tsc -p contracts/tsconfig.json --noEmit",
     "build": "tsc -p tsconfig.build.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "biome check .",
     "format": "biome check --write .",
-    "check": "pnpm typecheck && pnpm lint && pnpm test",
+    "check": "pnpm typecheck && pnpm typecheck:contracts && pnpm lint && pnpm test",
     "zk:setup": "tsx scripts/zk-setup.ts",
     "test:zk": "pnpm zk:setup && vitest run --config vitest.zk.config.ts"
   },
   "dependencies": {
-    "circomlibjs": "^0.1.7",
-    "snarkjs": "^0.7.6"
+    "circomlibjs": "0.1.7",
+    "snarkjs": "0.7.6",
+    "viem": "2.58.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.6.8",
-    "@types/node": "^26.6.6",
-    "@types/snarkjs": "^0.7.9",
-    "circom2": "^0.2.23",
-    "circomlib": "^2.0.5",
-    "tsx": "^4.23.15",
-    "typescript": "^7.0.2",
-    "vitest": "^5.1.0"
+    "@biomejs/biome": "2.6.8",
+    "@types/node": "26.6.6",
+    "@types/snarkjs": "0.7.9",
+    "circom2": "0.2.23",
+    "circomlib": "2.0.5",
+    "hardhat": "3.22.0",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
   },
   "packageManager": "pnpm@12.21.0+sha512.66fd8278ee28935ce951792d34367ff3af5c432a2756445823029533835b8da529bbe0be5130afd56ed0713fb8789e47bad82d93bd5ae2fe54b15562d6276ef0"
 }

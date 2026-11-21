@@ -5,10 +5,13 @@ holder-key binding, and challenge-based replay protection.
 
 ## Requirements
 
-- Node.js >= 22
+- Node.js >= 22.13.0
 - pnpm (version pinned in `packageManager`)
+- Tool versions are pinned exactly in `package.json` and `pnpm-lock.yaml`.
 
-No native Circom install is needed: the compiler comes from the `circom2` npm package.
+Circuits compile with the pnpm-installed `circom2` package. On Windows, setup uses a native
+`circom` binary when available because the WASM compiler cannot emit the witness generator there.
+The repository TypeScript and Hardhat configuration are checked with `pnpm check`.
 
 ## Getting started
 
@@ -28,6 +31,7 @@ pnpm cli help
 | `pnpm zk:setup`                 | Compile circuits, local trusted setup, export keys |
 | `pnpm test:zk`                  | `zk:setup` + tests with real circuits and proofs   |
 | `pnpm typecheck`                | `tsc --noEmit`                                     |
+| `pnpm typecheck:contracts`      | Typecheck Hardhat config with isolated tsconfig    |
 | `pnpm lint` / `pnpm format`     | Biome check / check with fixes                     |
 | `pnpm build`                    | Compile `src/` to `dist/`                          |
 

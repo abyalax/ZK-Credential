@@ -6,11 +6,12 @@ Findings from the P0.1 spike and how the ZK build works.
 
 | Tool          | Version | Role                                                     |
 | ------------- | ------- | -------------------------------------------------------- |
-| `circom2`     | 0.2.x   | Circom 2 compiler as WebAssembly: no native install      |
+| `circom2`     | 0.2.23  | Circom 2.2.3 compiler as WebAssembly                     |
 | `circomlib`   | 2.0.5   | Circom templates (Poseidon, EdDSA, comparators)          |
-| `snarkjs`     | 0.7.x   | Witness, Groth16 setup, prove, verify, Solidity verifier |
-| `circomlibjs` | 0.1.x   | Poseidon and EdDSA in TypeScript (used from P1)          |
-| Hardhat       | 3.x     | Local chain and contracts (P4)                           |
+| `snarkjs`     | 0.7.6   | Witness, Groth16 setup, prove, verify, Solidity verifier |
+| `circomlibjs` | 0.1.7   | Poseidon and EdDSA in TypeScript                         |
+| Hardhat       | 3.22.0  | Contract toolchain                                       |
+| viem          | 2.58.1  | On-chain issuer registry adapter                         |
 
 ## Commands
 
@@ -18,7 +19,7 @@ Findings from the P0.1 spike and how the ZK build works.
 | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | `pnpm zk:setup [--force] [v]` | Compile each variant, run the local ceremony, write keys and `verifier.sol`. Idempotent: skipped when the circuit sources are unchanged. |
 | `pnpm test:zk`                | `zk:setup`, then circuit tests and real-proof tests (about 15 s)                                                                         |
-| `pnpm check`                  | Typecheck, lint and fast tests with fakes. Needs no circuit build.                                                                       |
+| `pnpm check`                  | Typecheck app and Hardhat config, lint, and fast tests with fakes. Needs no circuit build.                                               |
 
 Output goes to `circuits/artifacts/` (gitignored): `ptau/pot<N>_final.ptau` (shared) and
 `<variant>/` with `.r1cs`, `<variant>_js/<variant>.wasm`, `.zkey`, `verification_key.json`,
@@ -40,3 +41,14 @@ Output goes to `circuits/artifacts/` (gitignored): `ptau/pot<N>_final.ptau` (sha
   repo's strict settings. Compiling a contract could not be verified in the sandbox used for P0
   because Hardhat downloads `solc` from a host that was blocked there; confirm on a normal machine
   at the start of P4.1.
+- **WASM compilation on Windows.** `circom2` can emit R1CS but fails to emit the WASM witness
+  generator. `zk:setup` prefers native `circom` when available and exits with an actionable message
+  when no compiler can generate the WASM. Other platforms use the pnpm-installed `circom2` package.
+- **Hardhat 3.22.0 + TypeScript 7.0.2.** The Hardhat config under `contracts/` typechecks under an
+  isolated tsconfig, and Hardhat loads it from that directory. Solidity compilation remains part of
+  P4.1, where the local compiler setup will be validated.
+
+The P1 on-chain registry lives in `contracts/src/IssuerRegistry.sol`. It records canonical `Ax:Ay`
+keys by keccak256, permits only the deployer to add keys, and emits `IssuerAdded`. The viem adapter
+checks configured domain issuer metadata against `isTrusted` on every registry read, feeding the
+existing verification precondition path. The contract has no revocation operation.

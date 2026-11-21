@@ -19,10 +19,10 @@ import {
 export const testIssuer: Issuer = {
   id: asIssuerId('issuer-1'),
   name: 'Test University',
-  publicKey: asIssuerPublicKey('issuer-1-public-key'),
+  publicKey: asIssuerPublicKey('1:2'),
 };
 
-export const testHolderPublicKey = asHolderPublicKey('holder-1-public-key');
+export const testHolderPublicKey = asHolderPublicKey('12345');
 export const testHolderSecretKey = asHolderSecretKey('holder-1-secret-key');
 
 export interface FakeClock extends Clock {

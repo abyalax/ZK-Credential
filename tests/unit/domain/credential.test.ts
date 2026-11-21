@@ -41,7 +41,7 @@ describe('satisfiesGpaThreshold', () => {
   it('is inclusive at the threshold', () => {
     const created = createCredential(draft);
     const threshold = toGpa(375);
-    if (!created.ok || !threshold.ok) throw new Error('setup failed');
+    if (!(created.ok && threshold.ok)) throw new Error('setup failed');
     expect(satisfiesGpaThreshold(created.value, threshold.value)).toBe(true);
   });
 });

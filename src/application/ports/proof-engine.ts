@@ -8,7 +8,7 @@ export interface ProofGenerationInput {
 
 /** Boundary to the zk-SNARK backend (circuit witness building, proving, verifying). */
 export interface ProofEngine {
-  generate(input: ProofGenerationInput): Promise<Proof>;
+  generate: (input: ProofGenerationInput) => Promise<Proof>;
   /** Cryptographic verification only; business rules are checked by the domain. */
-  verify(proof: Proof): Promise<boolean>;
+  verify: (proof: Proof) => Promise<boolean>;
 }

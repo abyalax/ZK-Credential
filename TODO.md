@@ -2,56 +2,60 @@
 
 **P0.1 Toolchain spike**
 
-- [ ] `circom2` mengompilasi circuit kecil yang memakai circomlib
-- [ ] `snarkjs` dan `circomlibjs` bisa diimpor dari TS ESM (Node 22, TS 7); buat shim `.d.ts` bila perlu
-- [ ] Hardhat 3 jalan berdampingan dengan tsconfig repo (atau tsconfig terpisah di `contracts/`)
-- [ ] Pin semua versi dan update "Requirements" di README
+- [x] `circom2` mengompilasi circuit kecil yang memakai circomlib
+- [x] `snarkjs` dan `circomlibjs` bisa diimpor dari TS ESM (Node 22, TS 7); buat shim `.d.ts` bila perlu
+- [x] Hardhat 3 jalan berdampingan dengan tsconfig repo (atau tsconfig terpisah di `contracts/`)
+- [x] Pin semua versi dan update "Requirements" di README
 
 **P0.2 Spesifikasi protokol dan encoding** (`docs/protocol/`)
 
-- [ ] Statement: "pemegang kredensial otentik dengan IPK ≥ threshold", beserta daftar input publik dan privat
-- [ ] Encoding atribut kredensial (string) ke field element BN254; GPA tetap integer ×100
-- [ ] Credential commitment = Poseidon(atribut, holderPk), yang ditandatangani issuer
-- [ ] Encoding `issuerPublicKey` (BabyJubJub = 2 elemen), `verifierId`, dan `challenge` ke field element
-- [ ] Temuan: `Randomness.hex(32)` (256 bit) bisa melebihi ukuran field BN254 (~254 bit). Perlu reduksi mod p atau pakai 31 byte.
+- [x] Statement: "pemegang kredensial otentik dengan IPK ≥ threshold", beserta daftar input publik dan privat
+- [x] Encoding atribut kredensial (string) ke field element BN254; GPA tetap integer ×100
+- [x] Credential commitment = Poseidon(atribut, holderPk), yang ditandatangani issuer
+- [x] Encoding `issuerPublicKey` (BabyJubJub = 2 elemen), `verifierId`, dan `challenge` ke field element
+- [x] Temuan: `Randomness.hex(32)` (256 bit) bisa melebihi ukuran field BN254 (~254 bit); challenge menggunakan 31 byte.
 
 **P0.3 Circuit inti threshold IPK**
 
-- [ ] Template `GpaThreshold` di `circuits/src/`: range check 0..400 dan `GreaterEqThan(gpa, threshold)`
-- [ ] Circuit test: valid, di bawah threshold, dan di luar range
-- [ ] Catat jumlah constraint sebagai baseline ablation
+- [x] Template `GpaThreshold` di `circuits/src/`: range check 0..400 dan `GreaterEqThan(gpa, threshold)`
+- [x] Circuit test: valid, di bawah threshold, dan di luar range
+- [x] Catat jumlah constraint sebagai baseline ablation
 
 **P0.4 Setup dan artifacts**
 
-- [ ] Script di `scripts/`: compile, powers of tau lokal, Groth16 setup, export verification key dan `Verifier.sol` ke `circuits/artifacts/` (gitignored)
-- [ ] Satu perintah idempoten, misalnya `pnpm zk:setup`
-- [ ] Dokumentasikan bahwa ptau lokal hanya untuk riset
+- [x] Script di `scripts/`: compile, powers of tau lokal, Groth16 setup, export verification key dan `Verifier.sol` ke `circuits/artifacts/` (gitignored)
+- [x] Satu perintah idempoten, `pnpm zk:setup`
+- [x] Dokumentasikan bahwa ptau lokal hanya untuk riset
 
 **P0.5 ProofEngine adapter (snarkjs)**
 
-- [ ] Implementasi port `ProofEngine.generate/verify` di `infrastructure/proof-system/`
-- [ ] Domain tetap bebas package, sehingga `boundaries.test.ts` harus tetap hijau
-- [ ] Script `test:zk` terpisah agar `pnpm check` tetap cepat
+- [x] Implementasi port `ProofEngine.generate/verify` di `infrastructure/proof-system/`
+- [x] Domain tetap bebas package, sehingga `boundaries.test.ts` harus tetap hijau
+- [x] Script `test:zk` terpisah agar `pnpm check` tetap cepat
 
 ## P1 - Issuer Authenticity
 
 **P1.1 Key management dan signer**
 
-- [ ] Generate keypair EdDSA-Poseidon di `infrastructure/key-management/`, file kunci di luar git, data sintetis saja
-- [ ] Implementasi port `CredentialSigner` yang menandatangani commitment
+- [x] Generate keypair EdDSA-Poseidon dan implementasi `CredentialSigner`; private key diprovisioning di luar git
+- [x] Implementasi port `CredentialSigner` yang menandatangani commitment
 
 **P1.2 Verifikasi tanda tangan di circuit**
 
-- [ ] Pakai `EdDSAPoseidonVerifier` circomlib; issuer public key menjadi input publik
-- [ ] Test: tanda tangan valid diterima. Atribut dimanipulasi, tanda tangan issuer lain, dan signature malformed ditolak.
-- [ ] Catat dampak constraint dan waktu (langkah ablation 1)
+- [x] Pakai `EdDSAPoseidonVerifier` circomlib; issuer key hash dan threshold menjadi input publik
+- [x] Test: tanda tangan valid diterima. Atribut dimanipulasi, tanda tangan issuer lain, dan signature malformed ditolak.
+- [x] Catat dampak constraint dan waktu (langkah ablation 1)
 
 **P1.3 Integrasi domain**
 
-- [ ] Selaraskan `evaluateIssuerBinding` dan `PublicSignals` dengan encoding baru
-- [ ] Perbarui fakes dan test yang terdampak
+- [x] Selaraskan `evaluateIssuerBinding` dan `PublicSignals` dengan encoding baru
+- [x] Perbarui fakes dan test yang terdampak
 
-**P1.4 Registry issuer on-chain** → dikerjakan di P4.2 dan P4.4
+**P1.4 Registry issuer on-chain**
+
+- [x] Kontrak `IssuerRegistry.sol`: tambah issuer owner-only, `isTrusted`, dan event; tanpa revocation
+- [x] Adapter `OnChainIssuerRegistry` untuk port dan jalur verifikasi melalui kontrak
+- [x] Library chain viem hanya di `infrastructure/`
 
 ## P2 - Holder-Key Binding
 
