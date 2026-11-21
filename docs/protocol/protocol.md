@@ -23,14 +23,14 @@ Every value entering a circuit is a field element, so every domain value needs a
 
 ## Encodings
 
-| Domain value                                                                                    | Field element                                                                                                                             |
-| ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `Gpa` (integer 0-400, GPA x 100)                                                                | the integer itself                                                                                                                        |
-| `issuedAt` (epoch ms, integer < 2^53)                                                           | the integer itself                                                                                                                        |
-| Text attribute (id, issuer id, student number, full name, degree, graduation date, verifier id) | `F_str(s) = int_be(first 31 bytes of SHA-256("zk-credential:v1:" ‖ utf8(s)))`. 248 bits, so always `< r` and no modular bias.             |
-| Issuer public key `(Ax, Ay)` on BabyJubJub                                                      | Domain `IssuerPublicKey` string is `"<Ax>:<Ay>"` in decimal. The circuit exposes `issuerKeyHash = Poseidon(Ax, Ay)` as one public signal. |
-| Holder public key                                                                               | `holderPublicKey = Poseidon(holderPrivateKey)`; the domain `HolderPublicKey` string is its canonical decimal form (see "Holder key derivation").        |
-| `challenge`                                                                                     | 31 random bytes (62 hex characters), read big-endian.                                                                                     |
+| Domain value                                                                                    | Field element                                                                                                                                    |
+| ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Gpa` (integer 0-400, GPA x 100)                                                                | the integer itself                                                                                                                               |
+| `issuedAt` (epoch ms, integer < 2^53)                                                           | the integer itself                                                                                                                               |
+| Text attribute (id, issuer id, student number, full name, degree, graduation date, verifier id) | `F_str(s) = int_be(first 31 bytes of SHA-256("zk-credential:v1:" ‖ utf8(s)))`. 248 bits, so always `< r` and no modular bias.                    |
+| Issuer public key `(Ax, Ay)` on BabyJubJub                                                      | Domain `IssuerPublicKey` string is `"<Ax>:<Ay>"` in decimal. The circuit exposes `issuerKeyHash = Poseidon(Ax, Ay)` as one public signal.        |
+| Holder public key                                                                               | `holderPublicKey = Poseidon(holderPrivateKey)`; the domain `HolderPublicKey` string is its canonical decimal form (see "Holder key derivation"). |
+| `challenge`                                                                                     | 31 random bytes (62 hex characters), read big-endian.                                                                                            |
 
 **Challenge size.** `Randomness.hex(32)` yields 256 bits, which can exceed `r` (about 254 bits).
 `makeIssueChallenge` draws 31 random bytes, so it fits without reduction and without bias. Reducing 32
@@ -60,7 +60,7 @@ Public signal order is the declaration order in the template (outputs first; non
 | ----------- | ----------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ----------- |
 | `threshold` | `gpa`                               | `gpaThreshold`                                                                  | `0 <= gpa <= 400`, `gpaThreshold <= 400`, `gpa >= gpaThreshold`      | implemented |
 | `issuer`    | + attributes, `(Ax, Ay)`, `(R8, S)` | `issuerKeyHash, gpaThreshold` (outputs precede public inputs)                   | + the attributes carry a valid signature of the issuer with that key | implemented |
-| `holder`    | + `holderPrivateKey`                        | same                                                                            | + `Poseidon(holderPrivateKey) == holderPublicKey` inside `C`                        | implemented |
+| `holder`    | + `holderPrivateKey`                | same                                                                            | + `Poseidon(holderPrivateKey) == holderPublicKey` inside `C`         | implemented |
 | `full`      | same                                | `issuerKeyHash, gpaThreshold, challenge, verifierId` (order fixed when written) | + the proof is bound to this challenge and verifier                  | P3          |
 
 ### `threshold` (implemented)

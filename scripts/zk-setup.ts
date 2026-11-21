@@ -26,7 +26,14 @@ const CIRCUITS_SRC = join(REPOSITORY_ROOT, 'circuits', 'src');
 const VARIANTS_DIR = join(CIRCUITS_SRC, 'variants');
 /** Smallest ptau worth generating; small circuits all share it. */
 const MIN_PTAU_POWER = 8;
-const GENERATE_WASM = process.platform !== 'win32';
+const NATIVE_CIRCOM = (() => {
+  try {
+    execFileSync('circom', ['--version'], { stdio: 'ignore' });
+    return 'circom';
+  } catch {}
+})();
+// circom2 (the WASM compiler) cannot emit a witness generator on Windows, but native Circom can.
+const GENERATE_WASM = process.platform !== 'win32' || NATIVE_CIRCOM !== undefined;
 
 const require = createRequire(import.meta.url);
 
@@ -46,14 +53,19 @@ const listCircomFiles = async (dir: string): Promise<string[]> => {
   return nested.flat().sort((a, b) => a.localeCompare(b));
 };
 
+/**
+ * Files are read in parallel but hashed in their sorted order. Hashing inside the parallel reads
+ * made the digest depend on which read finished first, so it changed between runs and every
+ * `pnpm zk:setup` rebuilt all variants.
+ */
 const hashSources = async (): Promise<string> => {
+  const files = await listCircomFiles(CIRCUITS_SRC);
+  const contents = await Promise.all(files.map((file) => readFile(file)));
   const hash = createHash('sha256');
-  await Promise.all(
-    (await listCircomFiles(CIRCUITS_SRC)).map(async (file) => {
-      hash.update(relative(CIRCUITS_SRC, file));
-      hash.update(await readFile(file));
-    }),
-  );
+  files.forEach((file, index) => {
+    hash.update(relative(CIRCUITS_SRC, file));
+    hash.update(contents[index] ?? '');
+  });
   return hash.digest('hex');
 };
 
@@ -77,28 +89,21 @@ const isUpToDate = async (variant: string, sourceHash: string): Promise<boolean>
  */
 const compile = (variant: string): void => {
   const circom2 = require.resolve('circom2/cli.js');
-  let nativeCompiler: string | undefined;
-  try {
-    execFileSync('/circom', ['--version'], { stdio: 'ignore' });
-    nativeCompiler = '/circom';
-  } catch {
-    // Fall back to the pnpm-installed WASM compiler when native Circom is unavailable.
-  }
   const args = [
     join('circuits', 'src', 'variants', `${variant}.circom`),
     '--r1cs',
     '--sym',
     ...(GENERATE_WASM ? ['--wasm'] : []),
     '-o',
-    '.',
+    join('circuits', 'src', 'variants'),
     '-l',
     join('circuits', 'src', 'templates'),
     '-l',
     'node_modules',
   ];
   try {
-    if (nativeCompiler) {
-      execFileSync(nativeCompiler, args, { cwd: REPOSITORY_ROOT, stdio: 'inherit' });
+    if (NATIVE_CIRCOM) {
+      execFileSync(NATIVE_CIRCOM, args, { cwd: REPOSITORY_ROOT, stdio: 'inherit' });
     } else {
       execFileSync(process.execPath, [circom2, ...args], {
         cwd: REPOSITORY_ROOT,
@@ -238,17 +243,15 @@ const main = async (): Promise<void> => {
   await mkdir(DEFAULT_ARTIFACTS_DIR, { recursive: true });
   const sourceHash = await hashSources();
 
-  await Promise.all(
-    variants.map(async (variant) => {
-      log(`[${variant}]`);
-      if (!force && (await isUpToDate(variant, sourceHash))) {
-        log('  up to date');
-        return;
-      }
-      await buildVariant(variant, sourceHash);
-      log('  done');
-    }),
-  );
+  for (const variant of variants) {
+    log(`[${variant}]`);
+    if (!force && (await isUpToDate(variant, sourceHash))) {
+      log('  up to date');
+      continue;
+    }
+    await buildVariant(variant, sourceHash);
+    log('  done');
+  }
 };
 
 try {
