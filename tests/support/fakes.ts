@@ -6,8 +6,8 @@ import type {
 } from '../../src/application/index.js';
 import type { Issuer, Proof } from '../../src/domain/index.js';
 import {
+  asHolderPrivateKey,
   asHolderPublicKey,
-  asHolderSecretKey,
   asIssuerId,
   asIssuerPublicKey,
   asIssuerSignature,
@@ -23,7 +23,7 @@ export const testIssuer: Issuer = {
 };
 
 export const testHolderPublicKey = asHolderPublicKey('12345');
-export const testHolderSecretKey = asHolderSecretKey('holder-1-secret-key');
+export const testHolderPrivateKey = asHolderPrivateKey('holder-1-secret-key');
 
 export interface FakeClock extends Clock {
   advance(ms: number): void;

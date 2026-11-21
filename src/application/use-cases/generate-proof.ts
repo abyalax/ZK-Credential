@@ -1,4 +1,4 @@
-import type { CredentialId, HolderSecretKey, Proof, ProofRequest } from '../../domain/index.js';
+import type { CredentialId, HolderPrivateKey, Proof, ProofRequest } from '../../domain/index.js';
 import { satisfiesGpaThreshold } from '../../domain/index.js';
 import type { Result } from '../../shared/index.js';
 import { err, ok } from '../../shared/index.js';
@@ -11,7 +11,7 @@ export interface GenerateProofDeps {
 
 export interface GenerateProofInput {
   readonly credentialId: CredentialId;
-  readonly holderSecretKey: HolderSecretKey;
+  readonly holderPrivateKey: HolderPrivateKey;
   readonly request: ProofRequest;
 }
 
@@ -31,7 +31,7 @@ export const makeGenerateProof =
 
     const proof = await deps.proofEngine.generate({
       signedCredential,
-      holderSecretKey: input.holderSecretKey,
+      holderPrivateKey: input.holderPrivateKey,
       request: input.request,
     });
     return ok(proof);

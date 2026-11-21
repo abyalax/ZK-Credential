@@ -22,8 +22,8 @@ import {
   createFakeProofEngine,
   createFakeRandomness,
   createFakeSigner,
+  testHolderPrivateKey,
   testHolderPublicKey,
-  testHolderSecretKey,
   testIssuer,
 } from './fakes.js';
 
@@ -80,7 +80,7 @@ export const createHarness = (options: HarnessOptions = {}) => {
     const challenge = await issueChallenge({ verifierId });
     const proof = await generateProof({
       credentialId,
-      holderSecretKey: testHolderSecretKey,
+      holderPrivateKey: testHolderPrivateKey,
       request: { verifierId, challenge: challenge.value, gpaThreshold: threshold },
     });
     if (!proof.ok) throw new Error(`proof generation failed: ${proof.error}`);

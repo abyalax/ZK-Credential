@@ -48,10 +48,12 @@ const listCircomFiles = async (dir: string): Promise<string[]> => {
 
 const hashSources = async (): Promise<string> => {
   const hash = createHash('sha256');
-  await Promise.all((await listCircomFiles(CIRCUITS_SRC)).map(async (file) => {
-    hash.update(relative(CIRCUITS_SRC,file))
-    hash.update(await readFile(file))
-  }))
+  await Promise.all(
+    (await listCircomFiles(CIRCUITS_SRC)).map(async (file) => {
+      hash.update(relative(CIRCUITS_SRC, file));
+      hash.update(await readFile(file));
+    }),
+  );
   return hash.digest('hex');
 };
 
@@ -88,7 +90,7 @@ const compile = (variant: string): void => {
     '--sym',
     ...(GENERATE_WASM ? ['--wasm'] : []),
     '-o',
-    join('circuits', 'src', 'variants'),
+    '.',
     '-l',
     join('circuits', 'src', 'templates'),
     '-l',
@@ -236,15 +238,17 @@ const main = async (): Promise<void> => {
   await mkdir(DEFAULT_ARTIFACTS_DIR, { recursive: true });
   const sourceHash = await hashSources();
 
-  await Promise.all(variants.map(async (variant) => {
-    log(`[${variant}]`);
-    if (!force && (await isUpToDate(variant, sourceHash))) {
-      log('  up to date');
-      return;
-    }
-    await buildVariant(variant, sourceHash);
-    log('  done');
-  }))
+  await Promise.all(
+    variants.map(async (variant) => {
+      log(`[${variant}]`);
+      if (!force && (await isUpToDate(variant, sourceHash))) {
+        log('  up to date');
+        return;
+      }
+      await buildVariant(variant, sourceHash);
+      log('  done');
+    }),
+  );
 };
 
 try {

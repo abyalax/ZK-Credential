@@ -1,8 +1,13 @@
-import type { HolderSecretKey, Proof, ProofRequest, SignedCredential } from '../../domain/index.js';
+import type {
+  HolderPrivateKey,
+  Proof,
+  ProofRequest,
+  SignedCredential,
+} from '../../domain/index.js';
 
 export interface ProofGenerationInput {
   readonly signedCredential: SignedCredential;
-  readonly holderSecretKey: HolderSecretKey;
+  readonly holderPrivateKey: HolderPrivateKey;
   readonly request: ProofRequest;
 }
 

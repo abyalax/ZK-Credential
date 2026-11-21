@@ -2,7 +2,10 @@ import { buildPoseidon } from 'circomlibjs';
 import type { CircuitSignals } from 'snarkjs';
 import type { ProofGenerationInput } from '../../application/index.js';
 import type { Issuer, PublicSignals } from '../../domain/index.js';
-import { credentialCommitmentInputs } from '../cryptography/credential-encoding.js';
+import {
+  credentialCommitmentInputs,
+  parseFieldElement,
+} from '../cryptography/credential-encoding.js';
 import {
   parseIssuerPublicKey,
   parseIssuerSignature,
@@ -39,36 +42,56 @@ export const thresholdVariant: CircuitVariant = {
   expectedPublicSignals: (claims) => [claims.gpaThreshold.toString()],
 };
 
+const issuerCircuitInputs = (
+  { signedCredential, request }: ProofGenerationInput,
+  issuer?: Issuer,
+): CircuitSignals => {
+  const credential = signedCredential.credential;
+  const fields = credentialCommitmentInputs(credential);
+  if (!issuer) throw new TypeError('Issuer circuit inputs require the registered issuer');
+  const [Ax, Ay] = parseIssuerPublicKey(issuer.publicKey);
+  const { R8x, R8y, S } = parseIssuerSignature(signedCredential.signature);
+  return {
+    id: fields[0].toString(),
+    issuerId: fields[1].toString(),
+    holderPublicKey: fields[2].toString(),
+    studentNumber: fields[3].toString(),
+    fullName: fields[4].toString(),
+    degree: fields[5].toString(),
+    graduationDate: fields[6].toString(),
+    gpa: credential.gpa.toString(),
+    issuedAt: credential.issuedAt.toString(),
+    Ax: Ax.toString(),
+    Ay: Ay.toString(),
+    R8x: R8x.toString(),
+    R8y: R8y.toString(),
+    S: S.toString(),
+    gpaThreshold: request.gpaThreshold.toString(),
+  };
+};
+
+const issuerExpectedPublicSignals: CircuitVariant['expectedPublicSignals'] = async (claims) => {
+  const eddsa = await buildPoseidon();
+  const [Ax, Ay] = parseIssuerPublicKey(claims.issuerPublicKey);
+  return [eddsa.F.toObject(eddsa([Ax, Ay])).toString(), claims.gpaThreshold.toString()];
+};
+
 /** Issuer authenticity plus the GPA policy. Circom orders outputs before public inputs. */
 export const issuerVariant: CircuitVariant = {
   name: 'issuer',
-  circuitInputs: ({ signedCredential, request }, issuer) => {
-    const credential = signedCredential.credential;
-    const fields = credentialCommitmentInputs(credential);
-    if (!issuer) throw new TypeError('Issuer circuit inputs require the registered issuer');
-    const [Ax, Ay] = parseIssuerPublicKey(issuer.publicKey);
-    const { R8x, R8y, S } = parseIssuerSignature(signedCredential.signature);
-    return {
-      id: fields[0].toString(),
-      issuerId: fields[1].toString(),
-      holderPublicKey: fields[2].toString(),
-      studentNumber: fields[3].toString(),
-      fullName: fields[4].toString(),
-      degree: fields[5].toString(),
-      graduationDate: fields[6].toString(),
-      gpa: credential.gpa.toString(),
-      issuedAt: credential.issuedAt.toString(),
-      Ax: Ax.toString(),
-      Ay: Ay.toString(),
-      R8x: R8x.toString(),
-      R8y: R8y.toString(),
-      S: S.toString(),
-      gpaThreshold: request.gpaThreshold.toString(),
-    };
-  },
-  expectedPublicSignals: async (claims) => {
-    const eddsa = await buildPoseidon();
-    const [Ax, Ay] = parseIssuerPublicKey(claims.issuerPublicKey);
-    return [eddsa.F.toObject(eddsa([Ax, Ay])).toString(), claims.gpaThreshold.toString()];
-  },
+  circuitInputs: issuerCircuitInputs,
+  expectedPublicSignals: issuerExpectedPublicSignals,
+};
+
+/**
+ * Issuer authenticity plus holder-key binding. The extra private input is the holder private key;
+ * the public signals are the same as the issuer variant, because the binding is only proven.
+ */
+export const holderVariant: CircuitVariant = {
+  name: 'holder',
+  circuitInputs: (input, issuer) => ({
+    ...issuerCircuitInputs(input, issuer),
+    holderPrivateKey: parseFieldElement(input.holderPrivateKey, 'Holder private key').toString(),
+  }),
+  expectedPublicSignals: issuerExpectedPublicSignals,
 };

@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import type { ProofGenerationInput } from '../../../src/application/index.js';
 import {
   asChallengeValue,
-  asHolderSecretKey,
+  asHolderPrivateKey,
   asIssuerPublicKey,
   asVerifierId,
   createCredential,
@@ -41,7 +41,7 @@ const credential = (() => {
 
 const input: ProofGenerationInput = {
   signedCredential: { credential, signature: 'sig' as never },
-  holderSecretKey: asHolderSecretKey('sk'),
+  holderPrivateKey: asHolderPrivateKey('sk'),
   request: { verifierId: verifierA, challenge: asChallengeValue('c1'), gpaThreshold: gpa(300) },
 };
 

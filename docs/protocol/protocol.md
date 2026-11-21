@@ -1,7 +1,7 @@
 # Protocol specification
 
 Status: P1. The `threshold` and `issuer` circuit variants and the EdDSA-Poseidon issuance signer are
-implemented. Holder and replay binding are specified here and built in P2-P3 (see `TODO.md`). Anything
+implemented. Replay binding is specified here and built in P3 (see `TODO.md`). Anything
 marked **(planned)** is a design decision, not yet code.
 
 ## Statement
@@ -29,7 +29,7 @@ Every value entering a circuit is a field element, so every domain value needs a
 | `issuedAt` (epoch ms, integer < 2^53)                                                           | the integer itself                                                                                                                        |
 | Text attribute (id, issuer id, student number, full name, degree, graduation date, verifier id) | `F_str(s) = int_be(first 31 bytes of SHA-256("zk-credential:v1:" ‖ utf8(s)))`. 248 bits, so always `< r` and no modular bias.             |
 | Issuer public key `(Ax, Ay)` on BabyJubJub                                                      | Domain `IssuerPublicKey` string is `"<Ax>:<Ay>"` in decimal. The circuit exposes `issuerKeyHash = Poseidon(Ax, Ay)` as one public signal. |
-| Holder public key                                                                               | `holderPk = Poseidon(holderSk)`; the domain `HolderPublicKey` string is its decimal form. **(planned)**                                   |
+| Holder public key                                                                               | `holderPublicKey = Poseidon(holderPrivateKey)`; the domain `HolderPublicKey` string is its canonical decimal form (see "Holder key derivation").        |
 | `challenge`                                                                                     | 31 random bytes (62 hex characters), read big-endian.                                                                                     |
 
 **Challenge size.** `Randomness.hex(32)` yields 256 bits, which can exceed `r` (about 254 bits).
@@ -40,7 +40,7 @@ encoding into the circuit's public signals.
 ## Credential commitment and issuer signature (P1)
 
 ```
-C = Poseidon(id, issuerId, holderPk, studentNumber, fullName, degree, graduationDate, gpa, issuedAt)
+C = Poseidon(id, issuerId, holderPublicKey, studentNumber, fullName, degree, graduationDate, gpa, issuedAt)
 signature = EdDSA-Poseidon.sign(issuerSecretKey, C)        -> (R8, S)
 ```
 
@@ -60,7 +60,7 @@ Public signal order is the declaration order in the template (outputs first; non
 | ----------- | ----------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ----------- |
 | `threshold` | `gpa`                               | `gpaThreshold`                                                                  | `0 <= gpa <= 400`, `gpaThreshold <= 400`, `gpa >= gpaThreshold`      | implemented |
 | `issuer`    | + attributes, `(Ax, Ay)`, `(R8, S)` | `issuerKeyHash, gpaThreshold` (outputs precede public inputs)                   | + the attributes carry a valid signature of the issuer with that key | implemented |
-| `holder`    | + `holderSk`                        | same                                                                            | + `Poseidon(holderSk) == holderPk` inside `C`                        | P2          |
+| `holder`    | + `holderPrivateKey`                        | same                                                                            | + `Poseidon(holderPrivateKey) == holderPublicKey` inside `C`                        | implemented |
 | `full`      | same                                | `issuerKeyHash, gpaThreshold, challenge, verifierId` (order fixed when written) | + the proof is bound to this challenge and verifier                  | P3          |
 
 ### `threshold` (implemented)
@@ -87,6 +87,44 @@ Public signal order is the declaration order in the template (outputs first; non
   P6.
 - Real-proof tests accept a valid EdDSA-Poseidon signature and reject changed attributes, a signature
   from another issuer key, and malformed signature data (`tests/zk/issuer-proof.test.ts`).
+
+### `holder` (implemented, P2 ablation)
+
+- `HolderCredential` wraps `IssuerCredential` and adds one private input, `holderPrivateKey`, plus the
+  constraint `Poseidon(holderPrivateKey) === holderPublicKey`. The same `holderPublicKey` signal feeds
+  the issuer-signed commitment, so the key the prover knows is the key the issuer signed.
+- Public signals are unchanged from `issuer` (`issuerKeyHash, gpaThreshold`): the binding is proven,
+  never revealed. `holderPublicKey` and `holderPrivateKey` stay private, so two presentations of one credential
+  share no holder identifier.
+- Constraint count and timing: **not yet recorded.** Run `pnpm zk:setup` and `pnpm test:zk`, then
+  fill in the delta against `issuer` (the test logs `[ablation:holder] prove+verify ... ms`).
+  Expected cost is one `Poseidon(1)` on top of `issuer`; this is an expectation, not a measurement.
+- Real-proof tests (`tests/zk/holder-proof.test.ts`) accept the owner and reject: a copy of the
+  credential without the secret, guessed secrets (including `holderPublicKey` used as the secret), a credential
+  issued to another holder, and a credential whose `holderPublicKey` was swapped after signing. A last test
+  shows the `issuer` circuit still accepts a copy without the secret, which is the gap this variant closes.
+
+## Holder key derivation
+
+`holderPublicKey = Poseidon(holderPrivateKey)`, with `holderPrivateKey` drawn as 31 uniformly random bytes (248 bits, always
+below `r`, no modular bias) and serialised as a canonical decimal string. Reasons:
+
+- **Cost.** One Poseidon hash of one input is far cheaper in constraints than the BabyJubJub scalar
+  multiplication a signature-style key pair (`pk = sk * G`) would need inside the circuit.
+- **Sufficient for the goal.** The holder never signs anything; it only has to prove knowledge of the
+  preimage of the key the issuer committed to. A hash preimage proof does exactly that.
+- **Reuse.** The commitment already hashes with Poseidon, so no new primitive enters the trusted base.
+
+Consequences and limits:
+
+- Security rests on Poseidon preimage resistance and on `holderPrivateKey` having full entropy. Short or
+  guessable secrets (for example `123`) are insecure; always use `generateHolderKeyPair`.
+- `holderPublicKey` is a hash, not a public-key signature key, so it cannot sign a challenge. Freshness
+  comes from the challenge public input added in P3, not from the holder key.
+- The secret is only ever passed to the circuit. `HolderKeyPair.privateKey` is non-enumerable, so
+  `JSON.stringify`, spreading and `console.log` of a pair leave it out, and validation errors never
+  repeat the value. Tests cover both (`tests/unit/infrastructure/holder-keys.test.ts`,
+  `tests/zk/holder-proof.test.ts`).
 
 ## What the verifier checks
 

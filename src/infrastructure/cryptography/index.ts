@@ -1,4 +1,9 @@
-export { credentialCommitmentInputs, encodeCredentialText } from './credential-encoding.js';
+export {
+  BN254_FIELD_ORDER,
+  credentialCommitmentInputs,
+  encodeCredentialText,
+  parseFieldElement,
+} from './credential-encoding.js';
 export { cryptoRandomness } from './crypto-randomness.js';
 export {
   createEddsaCredentialSigner,
@@ -6,3 +11,5 @@ export {
   parseIssuerPublicKey,
   parseIssuerSignature,
 } from './eddsa-credential-signer.js';
+export type { HolderKeyPair } from './holder-keys.js';
+export { deriveHolderPublicKey, generateHolderKeyPair } from './holder-keys.js';

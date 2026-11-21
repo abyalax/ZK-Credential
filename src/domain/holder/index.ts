@@ -1,2 +1,2 @@
-export type { HolderPublicKey, HolderSecretKey } from './holder.js';
-export { asHolderPublicKey, asHolderSecretKey } from './holder.js';
+export type { HolderPrivateKey, HolderPublicKey } from './holder.js';
+export { asHolderPrivateKey, asHolderPublicKey } from './holder.js';

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { testHolderSecretKey } from '../support/fakes.js';
+import { testHolderPrivateKey } from '../support/fakes.js';
 import { createHarness, gpa, verifierA } from '../support/harness.js';
 
 describe('credential flow (issue -> challenge -> prove -> verify)', () => {
@@ -43,7 +43,7 @@ describe('credential flow (issue -> challenge -> prove -> verify)', () => {
 
     const result = await h.generateProof({
       credentialId,
-      holderSecretKey: testHolderSecretKey,
+      holderPrivateKey: testHolderPrivateKey,
       request: { verifierId: verifierA, challenge: challenge.value, gpaThreshold: gpa(300) },
     });
 

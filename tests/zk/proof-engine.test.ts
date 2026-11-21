@@ -13,7 +13,7 @@ import {
   thresholdVariant,
 } from '../../src/infrastructure/index.js';
 import { InfrastructureError } from '../../src/shared/index.js';
-import { testHolderPublicKey, testHolderSecretKey, testIssuer } from '../support/fakes.js';
+import { testHolderPrivateKey, testHolderPublicKey, testIssuer } from '../support/fakes.js';
 import { createHarness, gpa, verifierA } from '../support/harness.js';
 
 /**
@@ -82,7 +82,7 @@ describe('honest flow with the threshold circuit', () => {
     await expect(
       engine.generate({
         signedCredential: { credential: created.value, signature: 'sig' as never },
-        holderSecretKey: testHolderSecretKey,
+        holderPrivateKey: testHolderPrivateKey,
         request: {
           verifierId: verifierA,
           challenge: asChallengeValue('c1'),

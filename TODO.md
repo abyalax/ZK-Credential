@@ -11,7 +11,7 @@
 
 - [x] Statement: "pemegang kredensial otentik dengan IPK ≥ threshold", beserta daftar input publik dan privat
 - [x] Encoding atribut kredensial (string) ke field element BN254; GPA tetap integer ×100
-- [x] Credential commitment = Poseidon(atribut, holderPk), yang ditandatangani issuer
+- [x] Credential commitment = Poseidon(atribut, holderPublicKey), yang ditandatangani issuer
 - [x] Encoding `issuerPublicKey` (BabyJubJub = 2 elemen), `verifierId`, dan `challenge` ke field element
 - [x] Temuan: `Randomness.hex(32)` (256 bit) bisa melebihi ukuran field BN254 (~254 bit); challenge menggunakan 31 byte.
 
@@ -61,18 +61,18 @@
 
 **P2.1 Desain**
 
-- [ ] Konfirmasi derivasi `holderPk` dan tulis alasannya di `docs/protocol/`
-- [ ] `holderPk` masuk ke credential commitment
+- [x] Konfirmasi derivasi `holderPublicKey` dan tulis alasannya di `docs/protocol/`
+- [x] `holderPublicKey` masuk ke credential commitment
 
 **P2.2 Circuit**
 
-- [ ] Constraint: prover mengetahui `holderSk` dengan `Poseidon(holderSk) == holderPk`
+- [ ] Constraint: prover mengetahui `holderPrivateKey` dengan `Poseidon(holderPrivateKey) == holderPublicKey`
 - [ ] Test: secret salah atau kredensial milik holder lain → witness gagal
 
 **P2.3 Adapter dan security test**
 
-- [ ] Generate kunci holder; `HolderSecretKey` tidak boleh ikut log atau output
-- [ ] Test: pemegang salinan kredensial tanpa secret key tidak bisa membuat proof valid
+- [x] Generate kunci holder; `HolderPrivateKey` tidak boleh ikut log atau output
+- [ ] Test: pemegang salinan kredensial tanpa private key tidak bisa membuat proof valid
 - [ ] Catat overhead (langkah ablation 2)
 
 ## P3 - Replay Protection
@@ -170,6 +170,6 @@ Notes:
 - [ ] EdDSA-Poseidon dengan syarat kompatibel dengan stack TypeScript, Hardhat, dan registry on-chain dengan challenge off-chain (hybrid).
 - [ ] Hasil cek kompatibilitas: `circomlibjs` 0.1.7 dan `snarkjs` 0.7.6 sudah ESM dan cocok dengan `"type": "module"`. `@types/snarkjs` tersedia, sedangkan `circomlibjs` mungkin perlu shim `.d.ts`. Hardhat 3.22 ESM + TS native. Ini baru cek metadata npm, belum dijalankan, jadi P0.1 berisi spike untuk memastikannya (termasuk TypeScript 7 di repo ini).
 - [ ] Compiler circom lewat paket npm `circom2` (WASM) agar tetap pnpm-only, dengan fallback ke binary native.
-- [ ] Kunci holder berbentuk `holderPk = Poseidon(holderSk)`, bukan perkalian BabyJubJub, karena lebih hemat constraint.
+- [ ] Kunci holder berbentuk `holderPublicKey = Poseidon(holderPrivateKey)`, bukan perkalian BabyJubJub, karena lebih hemat constraint.
 - [ ] Revocation tetap out of scope, sesuai `overview.md`.
 - [ ] Fakes tetap dipakai untuk unit test cepat, sedangkan test proof nyata dipisah.

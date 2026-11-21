@@ -16,7 +16,7 @@ import { InfrastructureError } from '../../src/shared/index.js';
 
 const ISSUER_SECRET = '11'.repeat(32);
 const OTHER_ISSUER_SECRET = '22'.repeat(32);
-const holderSecretKey = '123';
+const holderPrivateKey = '123';
 
 let issuer: Issuer;
 let signer: Awaited<ReturnType<typeof createEddsaCredentialSigner>>;
@@ -33,7 +33,7 @@ beforeAll(async () => {
   const created = createCredential({
     id: 'p1-credential',
     issuerId: issuer.id,
-    holderPublicKey: holderSecretKey,
+    holderPublicKey: holderPrivateKey,
     studentNumber: '2210001',
     fullName: 'P1 Test Student',
     degree: 'S.Kom.',
@@ -56,7 +56,7 @@ afterAll(async () => {
 const prove = (signedCredential: SignedCredential) =>
   engine.generate({
     signedCredential,
-    holderSecretKey: holderSecretKey as never,
+    holderPrivateKey: holderPrivateKey as never,
     request: {
       verifierId: asVerifierId('p1-verifier'),
       challenge: asChallengeValue('p1-challenge'),
