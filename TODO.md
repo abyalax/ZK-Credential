@@ -108,7 +108,7 @@
 
 **P4.3 Test kontrak**
 
-- [ ] Valid diterima; issuer tak terdaftar, proof atau signals dimanipulasi, dan non-owner yang mendaftarkan issuer ditolak. Test ada di `tests/chain/` (`pnpm test:chain`), tetapi belum dijalankan: `solc` tidak bisa diunduh di sandbox, jalankan di mesin biasa lalu centang
+- [x] Valid diterima; issuer tak terdaftar, proof atau signals dimanipulasi, dan non-owner yang mendaftarkan issuer ditolak. Test ada di `tests/chain/` (`pnpm test:chain`)
 
 **P4.4 Adapter TypeScript**
 
@@ -136,20 +136,20 @@
 
 **P6.1 Konfigurasi** (`experiments/configurations/`)
 
-- [ ] A: verifikasi tanda tangan digital tanpa ZKP (baseline, full disclosure)
-- [ ] B: ZKP hanya threshold, lalu +issuer, +holder, +replay (= model usulan)
-- [ ] Satu varian circuit per konfigurasi di `circuits/src/variants/`
+- [x] A: verifikasi tanda tangan digital tanpa ZKP (baseline, full disclosure)
+- [x] B: ZKP hanya threshold, lalu +issuer, +holder, +replay (= model usulan)
+- [x] Satu varian circuit per konfigurasi di `circuits/src/variants/` (A tidak punya circuit; B1-B4 = `threshold`, `issuer`, `holder`, `full`)
 
 **P6.2 Benchmark harness** (`experiments/benchmarks/`)
 
-- [ ] Metrik: waktu generate proof, waktu verifikasi, ukuran proof, memori, jumlah constraint, gas
-- [ ] Gas diukur lewat `estimateGas` pada kontrak; verifikasi challenge off-chain tidak punya biaya gas
-- [ ] Warm-up dan N pengulangan, laporan mean, median, std; catat spesifikasi hardware dan versi tool
+- [x] Metrik: waktu generate proof, waktu verifikasi, ukuran proof, memori, jumlah constraint, gas
+- [x] Gas diukur lewat `estimateGas` pada kontrak; verifikasi challenge off-chain tidak punya biaya gas. Hanya B4 yang punya kontrak verifier, jadi gas hanya dilaporkan untuk B4. Perlu `pnpm chain:sync && pnpm chain:build` (butuh `solc`), jalankan di mesin biasa
+- [x] Warm-up dan N pengulangan, laporan mean, median, std; catat spesifikasi hardware dan versi tool
 
 **P6.3 Analisis**
 
-- [ ] Script olah hasil menjadi tabel dan grafik untuk RQ4 dan RQ5
-- [ ] Catat threats to validity: ptau lokal, challenge store in-memory, data sintetis
+- [x] Script olah hasil menjadi tabel dan grafik untuk RQ4 dan RQ5
+- [x] Catat threats to validity: ptau lokal, challenge store in-memory, data sintetis
 
 ## P7 - CLI, Reproducibility, CI
 

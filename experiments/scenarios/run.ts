@@ -16,6 +16,7 @@ import {
   VARIANT_NAMES,
   type VariantName,
 } from './types.js';
+import { generateTimestamp, resolveScenariosPath } from '../results-utils.js';
 
 const RESULTS_DIR = join(REPOSITORY_ROOT, 'experiments', 'results');
 
@@ -63,7 +64,11 @@ const main = async (): Promise<void> => {
   for (const variant of variants) results.push(...(await runVariant(variant)));
 
   const summary = summarize(results);
-  await mkdir(RESULTS_DIR, { recursive: true });
+
+  const timestamp = generateTimestamp();
+  const resultsDir = resolveScenariosPath(REPOSITORY_ROOT, timestamp);
+  await mkdir(resultsDir, { recursive: true });
+
   const report = {
     experiment: 'P5 attack-scenario testing',
     generatedAt: new Date().toISOString(),
@@ -73,12 +78,13 @@ const main = async (): Promise<void> => {
   };
   await Promise.all([
     writeFile(
-      join(RESULTS_DIR, 'p5-attack-scenarios.json'),
+      join(resultsDir, 'p5-attack-scenarios.json'),
       `${JSON.stringify(report, null, 2)}\n`,
     ),
-    writeFile(join(RESULTS_DIR, 'p5-attack-scenarios.csv'), resultsToCsv(results)),
-    writeFile(join(RESULTS_DIR, 'p5-summary.csv'), summaryToCsv(summary)),
+    writeFile(join(resultsDir, 'p5-attack-scenarios.csv'), resultsToCsv(results)),
+    writeFile(join(resultsDir, 'p5-summary.csv'), summaryToCsv(summary)),
   ]);
+  log(`wrote experiments/results/${timestamp}/scenarios/p5-attack-scenarios.*`);
   log(summaryToCsv(summary));
 
   if (summary.some((row) => row.unexpected.length > 0)) {

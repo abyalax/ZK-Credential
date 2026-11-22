@@ -32,6 +32,15 @@ keeps `domain/` free of packages and Node built-ins.
 - Replay protection: challenges are verifier-scoped, single-use and time-limited. A challenge is
   consumed only after the proof verifies, so a forged proof cannot burn it.
 
+## Avoid
+
+- `await` inside a loop
+- multiple params more than 4, consider to single object params
+- function with more than 50 lines, split it by responsibility
+- one file with more than 300 line of codes
+- Async function with no `await` inside function
+- Deep nested ternary operation
+
 ## Scope decisions
 
 - Revocation is out of scope for the thesis, so there is no `revoke-credential` use case.

@@ -70,7 +70,7 @@ export interface ScenarioContext {
   readonly close: () => Promise<void>;
 }
 
-interface Parties {
+export interface Parties {
   readonly issuer: Issuer;
   readonly rogueIssuer: Issuer;
   readonly signer: CredentialSigner & { publicKey: Issuer['publicKey'] };
@@ -79,7 +79,7 @@ interface Parties {
   readonly attacker: HolderKeyPair;
 }
 
-const createParties = async (): Promise<Parties> => {
+export const createParties = async (): Promise<Parties> => {
   const [signer, rogueSigner, owner, attacker] = await Promise.all([
     createEddsaCredentialSigner(ISSUER_SECRET),
     createEddsaCredentialSigner(ROGUE_ISSUER_SECRET),
@@ -104,7 +104,7 @@ const createParties = async (): Promise<Parties> => {
   };
 };
 
-const makeSignCredential = (parties: Parties): ScenarioContext['signCredential'] => {
+export const makeSignCredential = (parties: Parties): ScenarioContext['signCredential'] => {
   let counter = 0;
   return async (options = {}) => {
     const holder = options.holder ?? parties.owner;
