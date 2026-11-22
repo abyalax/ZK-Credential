@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CHALLENGE_RANDOM_BYTES,
-  isCanonicalChallenge,
-  makeIssueChallenge,
-} from '../../../src/application/index.js';
+import { CHALLENGE_RANDOM_BYTES, isCanonicalChallenge, makeIssueChallenge } from '../../../src/application/index.js';
 import { createInMemoryChallengeStore } from '../../../src/infrastructure/index.js';
 import { createFakeClock, createFakeRandomness } from '../../support/fakes.js';
 import { verifierA } from '../../support/harness.js';

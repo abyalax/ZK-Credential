@@ -2,13 +2,7 @@ import type { CredentialError, IssuerId, SignedCredential } from '../../domain/i
 import { createCredential } from '../../domain/index.js';
 import type { Result } from '../../shared/index.js';
 import { err, ok } from '../../shared/index.js';
-import type {
-  Clock,
-  CredentialRepository,
-  CredentialSigner,
-  IssuerRegistry,
-  Randomness,
-} from '../ports/index.js';
+import type { Clock, CredentialRepository, CredentialSigner, IssuerRegistry, Randomness } from '../ports/index.js';
 
 export interface IssueCredentialDeps {
   readonly credentials: CredentialRepository;
@@ -29,10 +23,7 @@ export interface IssueCredentialInput {
   readonly gpa: number;
 }
 
-export type IssueCredentialError =
-  | CredentialError
-  | 'ISSUER_NOT_REGISTERED'
-  | 'SIGNER_KEY_MISMATCH';
+export type IssueCredentialError = CredentialError | 'ISSUER_NOT_REGISTERED' | 'SIGNER_KEY_MISMATCH';
 
 export const makeIssueCredential =
   (deps: IssueCredentialDeps) =>
@@ -40,8 +31,7 @@ export const makeIssueCredential =
     const trusted = await deps.issuers.list();
     const issuer = trusted.find((candidate) => candidate.id === input.issuerId);
     if (!issuer) return err('ISSUER_NOT_REGISTERED');
-    if (deps.signer.publicKey && deps.signer.publicKey !== issuer.publicKey)
-      return err('SIGNER_KEY_MISMATCH');
+    if (deps.signer.publicKey && deps.signer.publicKey !== issuer.publicKey) return err('SIGNER_KEY_MISMATCH');
 
     const created = createCredential({
       ...input,

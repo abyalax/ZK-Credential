@@ -128,15 +128,15 @@ Configuration comes from `.env` (see `.env.example`; `ISSUER_PRIVATE_KEY` is req
 (credentials, challenges, holder private key, proofs) lives in `.zk-state/` (override with
 `ZK_STATE_DIR`). It is gitignored and stored unencrypted: local research use only.
 
-| Command | Role | Flags |
-| --- | --- | --- |
-| `keygen` | holder | none. Writes `holder.json`, prints only the public key |
-| `register-issuer` | registry owner | none. Needs `REGISTRY_OWNER_PRIVATE_KEY` |
-| `issue` | issuer | `--student-number --name --degree --graduation-date --gpa [--holder-public-key]` |
-| `challenge` | verifier | `--verifier-id [--ttl-ms]` |
-| `prove` | holder | `--credential-id --challenge --verifier-id --threshold [--out]` |
-| `verify` | verifier | `--proof --verifier-id --threshold` |
-| `bench` | researcher | passes flags to the P6 harness, e.g. `--runs=30 --no-gas B4` |
+| Command           | Role           | Flags                                                                            |
+| ----------------- | -------------- | -------------------------------------------------------------------------------- |
+| `keygen`          | holder         | none. Writes `holder.json`, prints only the public key                           |
+| `register-issuer` | registry owner | none. Needs `REGISTRY_OWNER_PRIVATE_KEY`                                         |
+| `issue`           | issuer         | `--student-number --name --degree --graduation-date --gpa [--holder-public-key]` |
+| `challenge`       | verifier       | `--verifier-id [--ttl-ms]`                                                       |
+| `prove`           | holder         | `--credential-id --challenge --verifier-id --threshold [--out]`                  |
+| `verify`          | verifier       | `--proof --verifier-id --threshold`                                              |
+| `bench`           | researcher     | passes flags to the P6 harness, e.g. `--runs=30 --no-gas B4`                     |
 
 GPA flags are decimals (`3.75`), never the scaled integer. Exit codes: `0` success, `1` error,
 `2` proof rejected by `verify`.

@@ -1,9 +1,4 @@
-import type {
-  Proof,
-  RejectionReason,
-  VerificationAccepted,
-  VerificationPolicy,
-} from '../../domain/index.js';
+import type { Proof, RejectionReason, VerificationAccepted, VerificationPolicy } from '../../domain/index.js';
 import { evaluatePreconditions } from '../../domain/index.js';
 import type { Result } from '../../shared/index.js';
 import { err, ok } from '../../shared/index.js';

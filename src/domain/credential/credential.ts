@@ -39,10 +39,7 @@ export interface SignedCredential {
   readonly signature: IssuerSignature;
 }
 
-export type CredentialError =
-  | 'REQUIRED_FIELD_EMPTY'
-  | 'GPA_OUT_OF_RANGE'
-  | 'GRADUATION_DATE_INVALID';
+export type CredentialError = 'REQUIRED_FIELD_EMPTY' | 'GPA_OUT_OF_RANGE' | 'GRADUATION_DATE_INVALID';
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -53,14 +50,7 @@ const isBlank = (value: string): boolean => value.trim().length === 0;
 
 /** Pure validation of a draft. No clock, randomness or I/O: callers supply `id` and `issuedAt`. */
 export const createCredential = (draft: CredentialDraft): Result<Credential, CredentialError> => {
-  const requiredFields = [
-    draft.id,
-    draft.issuerId,
-    draft.holderPublicKey,
-    draft.studentNumber,
-    draft.fullName,
-    draft.degree,
-  ];
+  const requiredFields = [draft.id, draft.issuerId, draft.holderPublicKey, draft.studentNumber, draft.fullName, draft.degree];
   if (requiredFields.some(isBlank)) return err('REQUIRED_FIELD_EMPTY');
   if (!isIsoDate(draft.graduationDate)) return err('GRADUATION_DATE_INVALID');
 
@@ -82,5 +72,4 @@ export const createCredential = (draft: CredentialDraft): Result<Credential, Cre
 
 export const asCredentialId = (value: string): CredentialId => value as CredentialId;
 
-export const satisfiesGpaThreshold = (credential: Credential, threshold: Gpa): boolean =>
-  credential.gpa >= threshold;
+export const satisfiesGpaThreshold = (credential: Credential, threshold: Gpa): boolean => credential.gpa >= threshold;

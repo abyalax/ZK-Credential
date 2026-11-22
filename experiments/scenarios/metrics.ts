@@ -16,8 +16,7 @@ export interface ConfigurationSummary {
   readonly unexpected: readonly string[];
 }
 
-const ratio = (part: number, total: number): number =>
-  total === 0 ? 0 : Math.round((part / total) * 10_000) / 10_000;
+const ratio = (part: number, total: number): number => (total === 0 ? 0 : Math.round((part / total) * 10_000) / 10_000);
 
 export const summarize = (results: readonly ScenarioResult[]): ConfigurationSummary[] =>
   VARIANT_NAMES.map((configuration) => {
@@ -35,9 +34,7 @@ export const summarize = (results: readonly ScenarioResult[]): ConfigurationSumm
       attackRejected,
       attackRejectionRate: ratio(attackRejected, attacks.length),
       openAttacks: attacks.filter((row) => row.accepted).map((row) => row.scenarioId),
-      unexpected: rows
-        .filter((row) => row.accepted !== row.expectedAccepted)
-        .map((row) => row.scenarioId),
+      unexpected: rows.filter((row) => row.accepted !== row.expectedAccepted).map((row) => row.scenarioId),
     };
   }).filter((summary) => summary.honestTotal + summary.attackTotal > 0);
 
@@ -46,24 +43,12 @@ const csvCell = (value: string | number | boolean): string => {
   return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 };
 
-const toCsv = (
-  header: readonly string[],
-  rows: readonly (readonly (string | number | boolean)[])[],
-) => `${[header, ...rows].map((row) => row.map(csvCell).join(',')).join('\n')}\n`;
+const toCsv = (header: readonly string[], rows: readonly (readonly (string | number | boolean)[])[]) =>
+  `${[header, ...rows].map((row) => row.map(csvCell).join(',')).join('\n')}\n`;
 
 export const resultsToCsv = (results: readonly ScenarioResult[]): string =>
   toCsv(
-    [
-      'configuration',
-      'scenario_id',
-      'kind',
-      'category',
-      'expected_accepted',
-      'accepted',
-      'stage',
-      'reason',
-      'duration_ms',
-    ],
+    ['configuration', 'scenario_id', 'kind', 'category', 'expected_accepted', 'accepted', 'stage', 'reason', 'duration_ms'],
     results.map((row) => [
       row.configuration,
       row.scenarioId,

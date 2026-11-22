@@ -23,11 +23,7 @@ export const generateTimestamp = (): string => {
  * Resolves the results directory path for a given timestamp and gas mode.
  * Structure: experiments/results/{timestamp}/{gas|no-gas}/
  */
-export const resolveResultsPath = (
-  repositoryRoot: string,
-  timestamp: string,
-  mode: 'with-gas' | 'no-gas',
-): string => {
+export const resolveResultsPath = (repositoryRoot: string, timestamp: string, mode: 'with-gas' | 'no-gas'): string => {
   const gasFolder = mode === 'no-gas' ? 'no-gas' : 'gas';
   return `${repositoryRoot}/experiments/results/${timestamp}/${gasFolder}`;
 };

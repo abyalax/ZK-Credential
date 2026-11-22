@@ -1,11 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import {
-  asChallengeValue,
-  asIssuerPublicKey,
-  asVerifierId,
-  createCredential,
-  type Proof,
-} from '../../src/domain/index.js';
+import { asChallengeValue, asIssuerPublicKey, asVerifierId, createCredential, type Proof } from '../../src/domain/index.js';
 import {
   createSnarkjsProofEngine,
   createStaticIssuerRegistry,
@@ -112,12 +106,9 @@ describe('forged claims and proofs', () => {
   it('rejects a relabelled proof even when the payload signals are edited to match', async () => {
     const h = harness();
     const proof = await h.presentProof(await h.issueTestCredential(375), verifierA, gpa(100));
-    const forged = withPayload(
-      { ...proof, publicSignals: { ...proof.publicSignals, gpaThreshold: gpa(300) } },
-      (payload) => {
-        payload.publicSignals = ['300'];
-      },
-    );
+    const forged = withPayload({ ...proof, publicSignals: { ...proof.publicSignals, gpaThreshold: gpa(300) } }, (payload) => {
+      payload.publicSignals = ['300'];
+    });
 
     expect(await engine.verify(forged)).toBe(false);
   });
@@ -169,9 +160,7 @@ describe('malformed proof payloads', () => {
     const h = harness();
     const proof = await h.presentProof(await h.issueTestCredential(375));
 
-    await expect(engine.verify({ ...proof, payload: payload as Proof['payload'] })).resolves.toBe(
-      false,
-    );
+    await expect(engine.verify({ ...proof, payload: payload as Proof['payload'] })).resolves.toBe(false);
   });
 });
 

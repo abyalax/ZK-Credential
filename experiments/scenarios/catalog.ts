@@ -1,11 +1,5 @@
 import { DEFAULT_CHALLENGE_TTL_MS } from '../../src/application/index.js';
-import {
-  asChallengeValue,
-  asHolderPrivateKey,
-  asIssuerSignature,
-  asProofPayload,
-  type Proof,
-} from '../../src/domain/index.js';
+import { asChallengeValue, asHolderPrivateKey, asIssuerSignature, asProofPayload, type Proof } from '../../src/domain/index.js';
 import { BN254_FIELD_ORDER } from '../../src/infrastructure/index.js';
 import { gpa, verifierA, verifierB } from '../../tests/support/harness.js';
 import { attempt, type PresentOptions, policyFor, prepareAttempt, present } from './context.js';
@@ -51,9 +45,7 @@ const attack = (
 ): Scenario => ({ ...base, kind: 'attack', openIn: base.openIn ?? NONE });
 
 const honestScenarios: Scenario[] = [
-  honest('valid-accepted', 'Valid proof for the credential owner is accepted', (ctx) =>
-    attempt(ctx),
-  ),
+  honest('valid-accepted', 'Valid proof for the credential owner is accepted', (ctx) => attempt(ctx)),
   honest('valid-gpa-equals-threshold', 'GPA exactly at the threshold is accepted', async (ctx) =>
     attempt(ctx, { signedCredential: await ctx.signCredential({ gpaScaled: 300 }) }),
   ),
@@ -71,8 +63,7 @@ const thresholdScenarios: Scenario[] = [
     title: 'GPA below the claimed threshold cannot be proven',
     category: 'threshold',
     fullReason: PROVE_FAILED.reason,
-    run: async (ctx) =>
-      attempt(ctx, { signedCredential: await ctx.signCredential({ gpaScaled: 250 }) }),
+    run: async (ctx) => attempt(ctx, { signedCredential: await ctx.signCredential({ gpaScaled: 250 }) }),
   }),
   attack({
     id: 'threshold-below-policy',
@@ -102,8 +93,7 @@ const issuerScenarios: Scenario[] = [
     category: 'issuer',
     openIn: ['threshold'],
     fullReason: PROVE_FAILED.reason,
-    run: async (ctx) =>
-      attempt(ctx, { signedCredential: await ctx.signCredential({ signer: ctx.rogueSigner }) }),
+    run: async (ctx) => attempt(ctx, { signedCredential: await ctx.signCredential({ signer: ctx.rogueSigner }) }),
   }),
   attack({
     id: 'signature-malformed',
@@ -159,9 +149,7 @@ const holderScenarios: Scenario[] = [
     fullReason: PROVE_FAILED.reason,
     run: (ctx) =>
       attempt(ctx, {
-        holderPrivateKey: asHolderPrivateKey(
-          (BigInt(ctx.owner.privateKey) + BN254_FIELD_ORDER).toString(),
-        ),
+        holderPrivateKey: asHolderPrivateKey((BigInt(ctx.owner.privateKey) + BN254_FIELD_ORDER).toString()),
       }),
   }),
 ];
@@ -230,8 +218,7 @@ const replayScenarios: Scenario[] = [
     title: 'Proof presented after the challenge expired',
     category: 'replay',
     fullReason: 'CHALLENGE_EXPIRED',
-    run: async (ctx) =>
-      present(await prepareAttempt(ctx), { advanceMs: DEFAULT_CHALLENGE_TTL_MS + 1 }),
+    run: async (ctx) => present(await prepareAttempt(ctx), { advanceMs: DEFAULT_CHALLENGE_TTL_MS + 1 }),
   }),
   attack({
     id: 'challenge-unknown',
@@ -311,9 +298,7 @@ const malformedScenarios: Scenario[] = [
       present(await prepareAttempt(ctx), {
         tamper: tamperPayload((payload) => {
           const index = lastIndex(payload);
-          payload.publicSignals[index] = (
-            BigInt(payload.publicSignals[index] ?? '0') + BN254_FIELD_ORDER
-          ).toString();
+          payload.publicSignals[index] = (BigInt(payload.publicSignals[index] ?? '0') + BN254_FIELD_ORDER).toString();
         }),
       }),
   }),

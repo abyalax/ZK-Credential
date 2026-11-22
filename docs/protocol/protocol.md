@@ -1,8 +1,8 @@
 # Protocol specification
 
-Status: P1. The `threshold` and `issuer` circuit variants and the EdDSA-Poseidon issuance signer are
-implemented. Replay binding is specified here and built in P3 (see `TODO.md`). Anything
-marked **(planned)** is a design decision, not yet code.
+Status: final for the thesis (P0-P7 implemented). All four circuit variants (`threshold`, `issuer`,
+`holder`, `full`), the EdDSA-Poseidon issuance signer, the on-chain verifier and issuer registry, and
+the hybrid challenge flow are implemented. Revocation is out of scope.
 
 ## Statement
 
@@ -56,12 +56,12 @@ must be provisioned outside source control.
 The variants form the ablation ladder of the evaluation. Each adds mechanisms to the previous one.
 Public signal order is the declaration order in the template (outputs first; none are used).
 
-| Variant     | Private inputs                      | Public signals                                                                  | Proves                                                               | Status      |
-| ----------- | ----------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ----------- |
-| `threshold` | `gpa`                               | `gpaThreshold`                                                                  | `0 <= gpa <= 400`, `gpaThreshold <= 400`, `gpa >= gpaThreshold`      | implemented |
-| `issuer`    | + attributes, `(Ax, Ay)`, `(R8, S)` | `issuerKeyHash, gpaThreshold` (outputs precede public inputs)                   | + the attributes carry a valid signature of the issuer with that key | implemented |
-| `holder`    | + `holderPrivateKey`                | same                                                                            | + `Poseidon(holderPrivateKey) == holderPublicKey` inside `C`         | implemented |
-| `full`      | same                                | `issuerKeyHash, gpaThreshold, challenge, verifierId` (order fixed when written) | + the proof is bound to this challenge and verifier                  | P3          |
+| Variant     | Private inputs                      | Public signals                                                | Proves                                                               | Status      |
+| ----------- | ----------------------------------- | ------------------------------------------------------------- | -------------------------------------------------------------------- | ----------- |
+| `threshold` | `gpa`                               | `gpaThreshold`                                                | `0 <= gpa <= 400`, `gpaThreshold <= 400`, `gpa >= gpaThreshold`      | implemented |
+| `issuer`    | + attributes, `(Ax, Ay)`, `(R8, S)` | `issuerKeyHash, gpaThreshold` (outputs precede public inputs) | + the attributes carry a valid signature of the issuer with that key | implemented |
+| `holder`    | + `holderPrivateKey`                | same                                                          | + `Poseidon(holderPrivateKey) == holderPublicKey` inside `C`         | implemented |
+| `full`      | same                                | `issuerKeyHash, gpaThreshold, challenge, verifierId`          | + the proof is bound to this challenge and verifier                  | implemented |
 
 ### `threshold` (implemented)
 
@@ -107,6 +107,26 @@ Public signal order is the declaration order in the template (outputs first; non
   credential without the secret, guessed secrets (including `holderPublicKey` used as the secret), a credential
   issued to another holder, and a credential whose `holderPublicKey` was swapped after signing. A last test
   shows the `issuer` circuit still accepts a copy without the secret, which is the gap this variant closes.
+
+### `full` (implemented, P3 ablation, proposed model)
+
+- `FullCredential(9, 400)` adds `challenge` and `verifierId` as public inputs. Public signal order is
+  `[issuerKeyHash, gpaThreshold, challenge, verifierId]` (outputs first), and the on-chain
+  `CredentialVerifier` uses the same order (`tests/chain/credential-verifier.test.ts`).
+- 10,313 constraints, 2 more than `holder` (10,311), measured in P6 (configuration B4).
+- Both new signals are constrained inside the circuit, so changing `challenge` or `verifierId` in the
+  public signals fails cryptographic verification, not only the domain precondition. Variants without
+  this binding accept a relabelled payload (scenarios `replay-relabelled-challenge`,
+  `relay-to-other-verifier`).
+- `estimateGas` of `CredentialVerifier.verifyCredential` is 251,374 gas on in-process Hardhat (P6).
+  The challenge check is off-chain and costs no gas.
+
+## On-chain verification
+
+`CredentialVerifier` looks up `issuerKeyHash` in `IssuerRegistry` (owner-only registration, no
+revocation), then runs the generated Groth16 verifier. An unregistered issuer reverts, and the domain
+flow reports it as `PROOF_INVALID`. Registry keys are `issuerKeyHash = Poseidon(Ax, Ay)`, matching the
+circuit's public output. The challenge store stays off-chain (hybrid design).
 
 ## Holder key derivation
 

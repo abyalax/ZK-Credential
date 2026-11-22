@@ -18,10 +18,7 @@ export const FULL_PUBLIC_SIGNAL_COUNT = 4;
  * swapped, because the EVM pairing precompile expects (imaginary, real) while snarkjs emits
  * (real, imaginary). A wrong order makes every proof fail on-chain.
  */
-export const toVerifyCredentialArgs = ({
-  proof,
-  publicSignals,
-}: PayloadContent): VerifyCredentialArgs => {
+export const toVerifyCredentialArgs = ({ proof, publicSignals }: PayloadContent): VerifyCredentialArgs => {
   const [a0, a1] = proof.pi_a.map(BigInt);
   const [c0, c1] = proof.pi_c.map(BigInt);
   const [[b00, b01], [b10, b11]] = proof.pi_b.map((pair) => pair.map(BigInt)) as [
@@ -30,13 +27,7 @@ export const toVerifyCredentialArgs = ({
     [bigint, bigint],
   ];
   const signals = publicSignals.map(BigInt);
-  if (
-    signals.length !== FULL_PUBLIC_SIGNAL_COUNT ||
-    a0 === undefined ||
-    a1 === undefined ||
-    c0 === undefined ||
-    c1 === undefined
-  )
+  if (signals.length !== FULL_PUBLIC_SIGNAL_COUNT || a0 === undefined || a1 === undefined || c0 === undefined || c1 === undefined)
     throw new TypeError(`Expected ${FULL_PUBLIC_SIGNAL_COUNT} public signals`);
   const [s0, s1, s2, s3] = signals as [bigint, bigint, bigint, bigint];
   return {

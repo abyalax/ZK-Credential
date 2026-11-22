@@ -54,13 +54,13 @@ Everything runs locally. Hardhat is configured in `contracts/hardhat.config.ts` 
 `contracts/src/`, artifacts in the gitignored `contracts/artifacts/`) and is always started through
 the package scripts, which pass `--config contracts/hardhat.config.ts`.
 
-| Script                | Purpose                                                                        |
-| --------------------- | ------------------------------------------------------------------------------ |
-| `pnpm chain:node`     | Simulated Hardhat node on `http://127.0.0.1:8545`                              |
-| `pnpm chain:sync`     | Copies the snarkjs `full` verifier to `contracts/src/generated/` (gitignored)   |
-| `pnpm chain:build`    | Compiles the contracts                                                         |
-| `pnpm chain:deploy`   | Deploys registry, Groth16 verifier and `CredentialVerifier` to the local node  |
-| `pnpm test:chain`     | `setup:zk full` + `chain:sync` + `chain:build` + contract tests (in-process)   |
+| Script              | Purpose                                                                       |
+| ------------------- | ----------------------------------------------------------------------------- |
+| `pnpm chain:node`   | Simulated Hardhat node on `http://127.0.0.1:8545`                             |
+| `pnpm chain:sync`   | Copies the snarkjs `full` verifier to `contracts/src/generated/` (gitignored) |
+| `pnpm chain:build`  | Compiles the contracts                                                        |
+| `pnpm chain:deploy` | Deploys registry, Groth16 verifier and `CredentialVerifier` to the local node |
+| `pnpm test:chain`   | `setup:zk full` + `chain:sync` + `chain:build` + contract tests (in-process)  |
 
 Contracts:
 

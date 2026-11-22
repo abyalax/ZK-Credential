@@ -22,17 +22,12 @@ describe('benchmark statistics', () => {
 describe('P6 configurations', () => {
   it('covers baseline A and one circuit variant per ablation step, in order', () => {
     expect(CONFIGURATIONS.map((configuration) => configuration.id)).toEqual([...CONFIGURATION_IDS]);
-    expect(CONFIGURATIONS.map((configuration) => configuration.circuit)).toEqual([
-      undefined,
-      ...VARIANT_NAMES,
-    ]);
+    expect(CONFIGURATIONS.map((configuration) => configuration.circuit)).toEqual([undefined, ...VARIANT_NAMES]);
   });
 
   it('adds guarantees monotonically along B1 -> B4', () => {
     const count = (id: string) => {
-      const guarantees = CONFIGURATIONS.find(
-        (configuration) => configuration.id === id,
-      )?.guarantees;
+      const guarantees = CONFIGURATIONS.find((configuration) => configuration.id === id)?.guarantees;
       return Object.values(guarantees ?? {}).filter(Boolean).length;
     };
     expect(['B1', 'B2', 'B3', 'B4'].map(count)).toEqual([0, 1, 2, 3]);

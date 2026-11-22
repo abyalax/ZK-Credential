@@ -14,14 +14,14 @@ interfaces  ->  infrastructure  ->  application  ->  domain  ->  shared
 Imports point inward only. `tests/unit/architecture/boundaries.test.ts` enforces this, and also
 keeps `domain/` free of packages and Node built-ins.
 
-| Layer             | Responsibility                                                                                                                                                          |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `domain/`         | Pure types and rules: credential validation, issuer binding, challenge evaluation, verification preconditions. No I/O, clock or randomness.                             |
-| `application/`    | Use cases (`make*` factories taking ports) and port interfaces. Orchestrates; contains no crypto.                                                                       |
-| `infrastructure/` | Adapters for ports: persistence, clock, randomness, and `proof-system/` (snarkjs `ProofEngine`). `key-management/` and signature adapters come with the issuer circuit. |
-| `interfaces/`     | Entry points. CLI now; HTTP is on hold.                                                                                                                                 |
-| `circuits/`       | Circom sources, setup and artifacts. Kept apart from the TypeScript app.                                                                                                |
-| `experiments/`    | Benchmarks, attack scenarios and result collection.                                                                                                                     |
+| Layer             | Responsibility                                                                                                                                                                                                                              |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `domain/`         | Pure types and rules: credential validation, issuer binding, challenge evaluation, verification preconditions. No I/O, clock or randomness.                                                                                                 |
+| `application/`    | Use cases (`make*` factories taking ports) and port interfaces. Orchestrates; contains no crypto.                                                                                                                                           |
+| `infrastructure/` | Adapters for ports: persistence, clock, randomness, and `proof-system/` (snarkjs `ProofEngine`), `key-management/` and `cryptography/` (EdDSA-Poseidon signer, holder keys), and `chain/` (on-chain issuer registry and verifier via viem). |
+| `interfaces/`     | Entry points: the CLI and `composition/` (config and container). HTTP is on hold.                                                                                                                                                           |
+| `circuits/`       | Circom sources, setup and artifacts. Kept apart from the TypeScript app.                                                                                                                                                                    |
+| `experiments/`    | Benchmarks, attack scenarios and result collection.                                                                                                                                                                                         |
 
 ## Conventions
 
@@ -49,7 +49,7 @@ keeps `domain/` free of packages and Node built-ins.
 - The composition root lives in `interfaces/composition/` (P4.5): `loadConfig(process.env)` plus
   `createContainer(config)` wire the EdDSA signer, the on-chain issuer registry, and a proof engine
   that proves with snarkjs and verifies through `CredentialVerifier`. Challenges and credentials stay
-  in memory. `tests/support/harness.ts` is the test-side equivalent and accepts a real `ProofEngine`.
+  in memory in tests and benchmarks; the CLI persists them as JSON under `.zk-state/` through file stores. `tests/support/harness.ts` is the test-side equivalent and accepts a real `ProofEngine`.
 - Tests with real circuits live in `circuits/tests/` and `tests/zk/` and run via `pnpm test:zk`;
   contract tests live in `tests/chain/` and run via `pnpm test:chain`. `pnpm check` stays fast and
   needs neither a circuit build nor a Solidity compiler.

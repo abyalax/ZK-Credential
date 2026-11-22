@@ -6,7 +6,7 @@
  *
  * If --timestamp is not provided, the script will automatically use the latest timestamp folder.
  */
-import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { REPOSITORY_ROOT } from '../../src/infrastructure/index.js';
 import type { Summary } from '../benchmarks/stats.js';
@@ -94,10 +94,7 @@ const overheadRows = (rows: readonly Row[]) => {
     return [
       {
         step: `${from} -> ${to}`,
-        constraints:
-          a.constraints === null || b.constraints === null
-            ? '-'
-            : String(b.constraints - a.constraints),
+        constraints: a.constraints === null || b.constraints === null ? '-' : String(b.constraints - a.constraints),
         proveDeltaMs: fixed(b.prove.mean - a.prove.mean),
         provePercent: percent(a.prove.mean, b.prove.mean),
         verifyDeltaMs: fixed(b.verify.mean - a.verify.mean, 2),
@@ -293,17 +290,7 @@ const buildChartData = (report: Report) => {
   ];
 };
 
-const writeChart = async (chart: ReturnType<typeof buildChartData>[number]): Promise<void> => {
-  const svg = barChart(chart.title, chart.unit, chart.data);
-
-  await writeFile(join(RESULTS_DIR, chart.filename), svg);
-};
-
-const writeBenchmarkResults = async (
-  report: Report,
-  inputFilename: string,
-  timestamp?: string,
-): Promise<void> => {
+const writeBenchmarkResults = async (report: Report, timestamp?: string): Promise<void> => {
   let outputDir: string;
 
   if (timestamp) {
@@ -327,18 +314,14 @@ const writeBenchmarkResults = async (
     writeFile(join(outputDir, `p6-table${suffix}.md`), markdown),
     writeFile(join(outputDir, `p6-overhead${suffix}.csv`), csv),
     ...charts.map((chart) =>
-      writeFile(
-        join(outputDir, chart.filename.replace('.svg', `${suffix}.svg`)),
-        barChart(chart.title, chart.unit, chart.data),
-      ),
+      writeFile(join(outputDir, chart.filename.replace('.svg', `${suffix}.svg`)), barChart(chart.title, chart.unit, chart.data)),
     ),
   ]);
 };
 
 const main = async (): Promise<void> => {
   const args = process.argv.slice(2);
-  const fileArg =
-    args.find((arg) => arg.startsWith('--file='))?.split('=')[1] ?? 'p6-benchmark.json';
+  const fileArg = args.find((arg) => arg.startsWith('--file='))?.split('=')[1] ?? 'p6-benchmark.json';
   let timestampArg = args.find((arg) => arg.startsWith('--timestamp='))?.split('=')[1];
 
   // If no timestamp provided, try to find the latest one
@@ -348,12 +331,10 @@ const main = async (): Promise<void> => {
 
   const report = await loadReport(fileArg, timestampArg);
 
-  await writeBenchmarkResults(report, fileArg, timestampArg);
+  await writeBenchmarkResults(report, timestampArg);
 
   const suffix = report.mode === 'no-gas' ? '-nogas' : '';
-  const pathSuffix = timestampArg
-    ? `/${timestampArg}/${report.mode === 'no-gas' ? 'no-gas' : 'gas'}`
-    : '';
+  const pathSuffix = timestampArg ? `/${timestampArg}/${report.mode === 'no-gas' ? 'no-gas' : 'gas'}` : '';
   process.stdout.write(
     `wrote experiments/results${pathSuffix}/p6-table${suffix}.md, p6-overhead${suffix}.csv, p6-*${suffix}.svg\n`,
   );

@@ -17,10 +17,10 @@ The repository TypeScript and Hardhat configuration are checked with `pnpm check
 
 ```bash
 pnpm install
-pnpm check        # typecheck + lint + fast tests (fakes)
-pnpm test:zk      # builds the circuits, then runs circuit and real-proof tests
-pnpm test:security  # runs security tests with real Groth16 proofs
-pnpm experiment:p5   # runs P5 attack-scenario experiments (generates JSON/CSV results)
+pnpm check              # typecheck + lint + fast tests (fakes)
+pnpm test:zk            # builds the circuits, then runs circuit and real-proof tests
+pnpm test:security      # runs security tests with real Groth16 proofs
+pnpm experiment:p5      # runs P5 attack-scenario experiments (generates JSON/CSV results)
 pnpm cli help
 ```
 
@@ -46,6 +46,7 @@ pnpm cli challenge --verifier-id verifier-a       # prints the challenge value
 pnpm cli prove --credential-id <id> --challenge <value> --verifier-id verifier-a --threshold 3.50
 pnpm cli verify --proof .zk-state/proofs/<value>.json --verifier-id verifier-a --threshold 3.50
 ```
+
 
 `verify` prints `{"accepted": true, ...}` (exit 0). Running it again on the same proof prints
 `CHALLENGE_ALREADY_USED` (exit 2). `pnpm cli bench --runs=30 --no-gas` runs the P6 benchmark.

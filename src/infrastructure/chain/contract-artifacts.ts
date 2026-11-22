@@ -33,9 +33,7 @@ export const loadContractArtifact = async (
   name: string,
   artifactsDir: string = CONTRACT_ARTIFACTS_DIR,
 ): Promise<ContractArtifact> => {
-  const path = existsSync(artifactsDir)
-    ? await findArtifactFile(artifactsDir, `${name}.json`)
-    : undefined;
+  const path = existsSync(artifactsDir) ? await findArtifactFile(artifactsDir, `${name}.json`) : undefined;
   if (!path)
     throw new InfrastructureError(
       `Artifact for contract "${name}" not found in ${artifactsDir}. Run \`pnpm setup:zk\`, \`pnpm chain:sync\` and \`pnpm chain:build\` first.`,

@@ -1,9 +1,4 @@
-import type {
-  Clock,
-  CredentialSigner,
-  ProofEngine,
-  Randomness,
-} from '../../src/application/index.js';
+import type { Clock, CredentialSigner, ProofEngine, Randomness } from '../../src/application/index.js';
 import type { Issuer, Proof } from '../../src/domain/index.js';
 import {
   asHolderPrivateKey,

@@ -19,9 +19,7 @@ export interface HolderKeyPair {
 }
 
 /** `holderPublicKey = Poseidon(holderPrivateKey)`, as a decimal string (see docs/protocol/protocol.md). */
-export const deriveHolderPublicKey = async (
-  privateKey: HolderPrivateKey,
-): Promise<HolderPublicKey> => {
+export const deriveHolderPublicKey = async (privateKey: HolderPrivateKey): Promise<HolderPublicKey> => {
   poseidon ??= buildPoseidon();
   const hash = await poseidon;
   const secret = parseFieldElement(privateKey, 'Holder private key');
@@ -29,9 +27,7 @@ export const deriveHolderPublicKey = async (
 };
 
 /** `random` is injectable for deterministic tests; production uses the OS CSPRNG. */
-export const generateHolderKeyPair = async (
-  random: (size: number) => Uint8Array = randomBytes,
-): Promise<HolderKeyPair> => {
+export const generateHolderKeyPair = async (random: (size: number) => Uint8Array = randomBytes): Promise<HolderKeyPair> => {
   const secretHex = Buffer.from(random(SECRET_KEY_BYTES)).toString('hex');
   const privateKey = asHolderPrivateKey(BigInt(`0x${secretHex}`).toString());
   const pair = { publicKey: await deriveHolderPublicKey(privateKey) };

@@ -36,12 +36,7 @@ export interface CreateChallengeParams {
   readonly ttlMs: number;
 }
 
-export const createChallenge = ({
-  value,
-  verifierId,
-  now,
-  ttlMs,
-}: CreateChallengeParams): Challenge => ({
+export const createChallenge = ({ value, verifierId, now, ttlMs }: CreateChallengeParams): Challenge => ({
   value,
   verifierId,
   issuedAt: now,

@@ -62,10 +62,7 @@ interface Setup {
   readonly verifierAddress: Address;
   readonly registry: ReturnType<typeof createOnChainIssuerRegistry>;
   readonly engine: ReturnType<typeof createOnChainProofEngine>;
-  readonly callVerify: (
-    pubSignals?: VerifyCredentialArgs['pubSignals'],
-    pA?: VerifyCredentialArgs['pA'],
-  ) => Promise<boolean>;
+  readonly callVerify: (pubSignals?: VerifyCredentialArgs['pubSignals'], pA?: VerifyCredentialArgs['pA']) => Promise<boolean>;
 }
 
 /** Fresh chain with the contracts deployed; the test issuer is registered only when asked. */
@@ -124,14 +121,14 @@ describe('CredentialVerifier: honest flow', () => {
   it('matches the public signal order of the circuit', async () => {
     const { chain, verifierAddress } = await setup({ registerIssuer: true });
     const { abi } = await loadContractArtifact('CredentialVerifier');
-    const position = (name: string) =>
-      chain.publicClient.readContract({ address: verifierAddress, abi, functionName: name });
+    const position = (name: string) => chain.publicClient.readContract({ address: verifierAddress, abi, functionName: name });
 
-    expect(
-      await Promise.all(
-        ['ISSUER_KEY_HASH', 'GPA_THRESHOLD', 'CHALLENGE', 'VERIFIER_ID'].map(position),
-      ),
-    ).toEqual([0n, 1n, 2n, 3n]);
+    expect(await Promise.all(['ISSUER_KEY_HASH', 'GPA_THRESHOLD', 'CHALLENGE', 'VERIFIER_ID'].map(position))).toEqual([
+      0n,
+      1n,
+      2n,
+      3n,
+    ]);
     expect(args.pubSignals[0]).toBe(await issuerKeyHash(issuer.publicKey));
     expect(args.pubSignals[1]).toBe(300n);
   });

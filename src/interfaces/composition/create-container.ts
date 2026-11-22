@@ -1,19 +1,8 @@
-import {
-  createPublicClient,
-  createWalletClient,
-  http,
-  type PublicClient,
-  type WalletClient,
-} from 'viem';
+import { createPublicClient, createWalletClient, http, type PublicClient, type WalletClient } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { hardhat } from 'viem/chains';
 import type { ChallengeStore, CredentialRepository } from '../../application/index.js';
-import {
-  makeGenerateProof,
-  makeIssueChallenge,
-  makeIssueCredential,
-  makeVerifyCredential,
-} from '../../application/index.js';
+import { makeGenerateProof, makeIssueChallenge, makeIssueCredential, makeVerifyCredential } from '../../application/index.js';
 import type { Issuer } from '../../domain/index.js';
 import { asIssuerId } from '../../domain/index.js';
 import {
@@ -45,16 +34,13 @@ export interface ContainerOverrides {
 
 export const createContainer = async (config: AppConfig, overrides: ContainerOverrides = {}) => {
   const { chain } = config;
-  const publicClient =
-    overrides.publicClient ?? createPublicClient({ chain: hardhat, transport: http(chain.rpcUrl) });
+  const publicClient = overrides.publicClient ?? createPublicClient({ chain: hardhat, transport: http(chain.rpcUrl) });
   const walletClient =
     overrides.walletClient ??
     createWalletClient({
       chain: hardhat,
       transport: http(chain.rpcUrl),
-      ...(chain.registryOwnerPrivateKey
-        ? { account: privateKeyToAccount(chain.registryOwnerPrivateKey) }
-        : {}),
+      ...(chain.registryOwnerPrivateKey ? { account: privateKeyToAccount(chain.registryOwnerPrivateKey) } : {}),
     });
 
   const signer = await createEddsaCredentialSigner(config.issuer.privateKey);

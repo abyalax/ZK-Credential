@@ -6,9 +6,7 @@ import { testIssuer } from '../../support/fakes.js';
 describe('on-chain issuer registry adapter', () => {
   it('returns only configured issuers trusted by the contract', async () => {
     const trustedHash = await issuerKeyHash(testIssuer.publicKey);
-    const readContract = vi.fn(
-      async ({ args }: { args: readonly [bigint] }) => args[0] === trustedHash,
-    );
+    const readContract = vi.fn(async ({ args }: { args: readonly [bigint] }) => args[0] === trustedHash);
     const registry = createOnChainIssuerRegistry({
       publicClient: { readContract } as unknown as PublicClient,
       walletClient: {} as WalletClient,

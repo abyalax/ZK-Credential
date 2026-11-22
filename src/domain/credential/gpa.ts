@@ -11,6 +11,4 @@ export const GPA_MIN = 0;
 export const GPA_MAX = 400;
 
 export const toGpa = (scaled: number): Result<Gpa, 'GPA_OUT_OF_RANGE'> =>
-  Number.isInteger(scaled) && scaled >= GPA_MIN && scaled <= GPA_MAX
-    ? ok(scaled as Gpa)
-    : err('GPA_OUT_OF_RANGE');
+  Number.isInteger(scaled) && scaled >= GPA_MIN && scaled <= GPA_MAX ? ok(scaled as Gpa) : err('GPA_OUT_OF_RANGE');

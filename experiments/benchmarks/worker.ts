@@ -24,11 +24,7 @@ export interface WorkerResult {
   verifyMs: number[];
 }
 
-export const runWorker = async (
-  id: string,
-  runs: number,
-  warmup: number,
-): Promise<WorkerResult> => {
+export const runWorker = async (id: string, runs: number, warmup: number): Promise<WorkerResult> => {
   const configuration = findConfiguration(id);
   const rssBeforeSetupMb = toMb(process.memoryUsage().rss);
   const runner = await createRunner(configuration);

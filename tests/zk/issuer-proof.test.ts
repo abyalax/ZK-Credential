@@ -7,11 +7,7 @@ import {
   type Issuer,
   type SignedCredential,
 } from '../../src/domain/index.js';
-import {
-  createEddsaCredentialSigner,
-  createSnarkjsProofEngine,
-  issuerVariant,
-} from '../../src/infrastructure/index.js';
+import { createEddsaCredentialSigner, createSnarkjsProofEngine, issuerVariant } from '../../src/infrastructure/index.js';
 import { InfrastructureError } from '../../src/shared/index.js';
 
 const ISSUER_SECRET = '11'.repeat(32);
@@ -76,9 +72,7 @@ describe('issuer circuit variant', () => {
   it('rejects a credential whose attributes changed after signing', async () => {
     const signature = await signer.sign(credential);
     const changed = { ...credential, fullName: 'Changed Student' } as Credential;
-    await expect(prove({ credential: changed, signature })).rejects.toBeInstanceOf(
-      InfrastructureError,
-    );
+    await expect(prove({ credential: changed, signature })).rejects.toBeInstanceOf(InfrastructureError);
   });
 
   it('rejects a signature made by a different issuer', async () => {

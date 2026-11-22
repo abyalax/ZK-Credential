@@ -24,9 +24,7 @@ export interface SnarkjsProofEngine extends ProofEngine {
 }
 
 const assertArtifactsExist = (paths: CircuitArtifactPaths, variant: string): void => {
-  const missing = [paths.wasm, paths.zkey, paths.verificationKey].filter(
-    (file) => !existsSync(file),
-  );
+  const missing = [paths.wasm, paths.zkey, paths.verificationKey].filter((file) => !existsSync(file));
   if (missing.length > 0) {
     throw new InfrastructureError(
       `Circuit artifacts for "${variant}" are missing (${missing.join(', ')}). Run \`pnpm setup:zk\` first.`,
@@ -42,25 +40,14 @@ interface GenerateProofParams {
   readonly input: Parameters<ProofEngine['generate']>[0];
 }
 
-const generateProof = async ({
-  snarkjs,
-  variant,
-  issuers,
-  paths,
-  input,
-}: GenerateProofParams): Promise<Proof> => {
+const generateProof = async ({ snarkjs, variant, issuers, paths, input }: GenerateProofParams): Promise<Proof> => {
   const { credential } = input.signedCredential;
   const issuer = (await issuers.list()).find((candidate) => candidate.id === credential.issuerId);
-  if (!issuer)
-    throw new InfrastructureError(`Issuer "${credential.issuerId}" is not in the issuer registry`);
+  if (!issuer) throw new InfrastructureError(`Issuer "${credential.issuerId}" is not in the issuer registry`);
 
   let generated: Awaited<ReturnType<typeof snarkjs.groth16.fullProve>>;
   try {
-    generated = await snarkjs.groth16.fullProve(
-      variant.circuitInputs(input, issuer),
-      paths.wasm,
-      paths.zkey,
-    );
+    generated = await snarkjs.groth16.fullProve(variant.circuitInputs(input, issuer), paths.wasm, paths.zkey);
   } catch (cause) {
     throw new InfrastructureError(`Proof generation failed for circuit "${variant.name}"`, {
       cause,
@@ -108,9 +95,7 @@ const verifyProof = async (
  * Groth16 `ProofEngine` backed by snarkjs. Proving needs the variant's compiled circuit and
  * proving key, verifying needs its verification key; all come from `pnpm setup:zk`.
  */
-export const createSnarkjsProofEngine = async (
-  options: SnarkjsProofEngineOptions,
-): Promise<SnarkjsProofEngine> => {
+export const createSnarkjsProofEngine = async (options: SnarkjsProofEngineOptions): Promise<SnarkjsProofEngine> => {
   const { variant, issuers } = options;
   const paths = circuitArtifactPaths(variant.name, options.artifactsDir);
   assertArtifactsExist(paths, variant.name);

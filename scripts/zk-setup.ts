@@ -118,9 +118,7 @@ const compile = (variant: string): void => {
       )
     ) {
       const output = error as { stdout?: string; stderr?: string };
-      throw new Error(
-        `Circuit compilation failed for "${variant}": ${output.stderr ?? 'missing R1CS/WASM output'}`,
-      );
+      throw new Error(`Circuit compilation failed for "${variant}": ${output.stderr ?? 'missing R1CS/WASM output'}`);
     }
   }
   if (GENERATE_WASM && !existsSync(join(VARIANTS_DIR, `${variant}_js`, `${variant}.wasm`))) {
@@ -149,12 +147,7 @@ const createInitialPtau = async (power: number, outputPath: string): Promise<voi
 };
 
 const contributePtau = async (initialPath: string, outputPath: string): Promise<void> => {
-  await snarkjs.powersOfTau.contribute(
-    initialPath,
-    outputPath,
-    'zk-credential local ceremony',
-    entropy(),
-  );
+  await snarkjs.powersOfTau.contribute(initialPath, outputPath, 'zk-credential local ceremony', entropy());
 };
 
 const ensurePtau = async (power: number): Promise<string> => {
@@ -210,26 +203,18 @@ const buildVariant = async (variant: string, sourceHash: string): Promise<void> 
 
   // Keep WASM beside the circuit artifacts on supported platforms.
   const compiledWasmDir = join(VARIANTS_DIR, `${variant}_js`);
-  if (existsSync(compiledWasmDir))
-    await rename(compiledWasmDir, join(paths.directory, `${variant}_js`));
+  if (existsSync(compiledWasmDir)) await rename(compiledWasmDir, join(paths.directory, `${variant}_js`));
   if (!GENERATE_WASM) log('    wasm compilation skipped (known issue with circom2 on Windows)');
 
   const info = await snarkjs.r1cs.info(paths.r1cs);
-  log(
-    `  constraints=${info.nConstraints} public-inputs=${info.nPubInputs} private-inputs=${info.nPrvInputs}`,
-  );
+  log(`  constraints=${info.nConstraints} public-inputs=${info.nPubInputs} private-inputs=${info.nPrvInputs}`);
 
   const ptau = await ensurePtau(ptauPowerFor(info));
 
   log('  groth16 setup');
   const initialZkey = join(paths.directory, `${variant}_0000.zkey`);
   await snarkjs.zKey.newZKey(paths.r1cs, ptau, initialZkey);
-  await snarkjs.zKey.contribute(
-    initialZkey,
-    paths.zkey,
-    'zk-credential local contribution',
-    entropy(),
-  );
+  await snarkjs.zKey.contribute(initialZkey, paths.zkey, 'zk-credential local contribution', entropy());
   await rm(initialZkey, { force: true });
 
   if (!(await snarkjs.zKey.verifyFromR1cs(paths.r1cs, ptau, paths.zkey))) {
@@ -258,9 +243,7 @@ const main = async (): Promise<void> => {
     .sort((a, b) => a.localeCompare(b));
   const unknown = requested.filter((variant) => !available.includes(variant));
   if (unknown.length > 0) {
-    throw new Error(
-      `Unknown variant(s): ${unknown.join(', ')}. Available: ${available.join(', ')}`,
-    );
+    throw new Error(`Unknown variant(s): ${unknown.join(', ')}. Available: ${available.join(', ')}`);
   }
   const variants = requested.length > 0 ? requested : available;
 

@@ -1,15 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { SCENARIOS } from '../../experiments/scenarios/catalog.js';
-import {
-  createScenarioContext,
-  type ScenarioContext,
-} from '../../experiments/scenarios/context.js';
-import {
-  expectedAcceptance,
-  type Outcome,
-  VARIANT_NAMES,
-  type VariantName,
-} from '../../experiments/scenarios/types.js';
+import { createScenarioContext, type ScenarioContext } from '../../experiments/scenarios/context.js';
+import { expectedAcceptance, type Outcome, VARIANT_NAMES, type VariantName } from '../../experiments/scenarios/types.js';
 
 /**
  * P5.1: every scenario runs with real Groth16 proofs against every circuit variant. A variant is
@@ -18,9 +10,7 @@ import {
  * Needs `pnpm setup:zk` (run by `pnpm test:zk` and `pnpm test:security`).
  */
 
-describe.each(
-  VARIANT_NAMES,
-)('attack scenarios on the "%s" circuit variant', (variant: VariantName) => {
+describe.each(VARIANT_NAMES)('attack scenarios on the "%s" circuit variant', (variant: VariantName) => {
   let ctx: ScenarioContext;
   const outcomes = new Map<string, Outcome>();
 
@@ -44,12 +34,12 @@ describe.each(
   }
 
   it('leaves no attack open in the proposed model, and only listed gaps elsewhere', () => {
-    const open = SCENARIOS.filter(
-      (scenario) => scenario.kind === 'attack' && outcomes.get(scenario.id)?.accepted,
-    ).map((scenario) => scenario.id);
-    const listed = SCENARIOS.filter(
-      (scenario) => scenario.kind === 'attack' && scenario.openIn.includes(variant),
-    ).map((scenario) => scenario.id);
+    const open = SCENARIOS.filter((scenario) => scenario.kind === 'attack' && outcomes.get(scenario.id)?.accepted).map(
+      (scenario) => scenario.id,
+    );
+    const listed = SCENARIOS.filter((scenario) => scenario.kind === 'attack' && scenario.openIn.includes(variant)).map(
+      (scenario) => scenario.id,
+    );
 
     expect(open.sort()).toEqual(listed.sort());
     if (variant === 'full') expect(open).toEqual([]);

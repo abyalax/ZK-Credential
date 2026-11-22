@@ -6,13 +6,7 @@ export type VariantName = (typeof VARIANT_NAMES)[number];
 
 export type ScenarioKind = 'honest' | 'attack';
 
-export type ScenarioCategory =
-  | 'baseline'
-  | 'threshold'
-  | 'issuer'
-  | 'holder'
-  | 'replay'
-  | 'malformed';
+export type ScenarioCategory = 'baseline' | 'threshold' | 'issuer' | 'holder' | 'replay' | 'malformed';
 
 /** Where an attempt ended: the holder could not build a proof, or the verifier decided. */
 export type OutcomeStage = 'prove' | 'verify';

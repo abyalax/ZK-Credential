@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SCENARIOS } from '../../../experiments/scenarios/catalog.js';
 import { resultsToCsv, summarize, summaryToCsv } from '../../../experiments/scenarios/metrics.js';
-import {
-  expectedAcceptance,
-  type ScenarioResult,
-  VARIANT_NAMES,
-} from '../../../experiments/scenarios/types.js';
+import { expectedAcceptance, type ScenarioResult, VARIANT_NAMES } from '../../../experiments/scenarios/types.js';
 
 const row = (overrides: Partial<ScenarioResult>): ScenarioResult => ({
   configuration: 'full',

@@ -17,10 +17,7 @@ export interface CircuitArtifactPaths {
   readonly sourceHash: string;
 }
 
-export const circuitArtifactPaths = (
-  variant: string,
-  artifactsDir: string = DEFAULT_ARTIFACTS_DIR,
-): CircuitArtifactPaths => {
+export const circuitArtifactPaths = (variant: string, artifactsDir: string = DEFAULT_ARTIFACTS_DIR): CircuitArtifactPaths => {
   const directory = join(artifactsDir, variant);
   return {
     directory,

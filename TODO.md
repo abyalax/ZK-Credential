@@ -161,9 +161,9 @@
 
 ## P8 - Dokumentasi dan Skripsi
 
-- [ ] Finalisasi `docs/protocol/`; update `overview.md` (hapus catatan "no composition root yet")
-- [ ] Petakan setiap RQ ke bukti (test atau eksperimen) di `docs/research/`
-- [ ] Draf Bab Implementasi dan Pengujian dari hasil P5 dan P6
+- [x] Finalisasi `docs/protocol/`; update `overview.md` (catatan composition root sudah diganti, baris infrastructure dan interfaces diperbarui)
+- [x] Petakan setiap RQ ke bukti (test atau eksperimen) di `docs/research/rq-evidence.md`. Nomor RQ1-RQ3 perlu diselaraskan dengan proposal
+- [x] Draf Bab Implementasi dan Pengujian dari hasil P5 dan P6: `docs/research/bab-implementasi-pengujian.md`. Tabel P5 terukur belum diisi, jalankan `pnpm experiment:p5` di mesin biasa
 
 Notes:
 

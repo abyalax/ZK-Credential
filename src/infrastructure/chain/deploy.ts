@@ -29,8 +29,7 @@ const deploy = async (
     chain: walletClient.chain ?? null,
   });
   const receipt = await publicClient.waitForTransactionReceipt({ hash });
-  if (receipt.status !== 'success' || !receipt.contractAddress)
-    throw new InfrastructureError(`Deployment of ${name} failed`);
+  if (receipt.status !== 'success' || !receipt.contractAddress) throw new InfrastructureError(`Deployment of ${name} failed`);
   return receipt.contractAddress;
 };
 
@@ -38,14 +37,9 @@ const deploy = async (
  * Deploys the registry (owned by the wallet account), the generated Groth16 verifier, and the
  * `CredentialVerifier` that ties them together.
  */
-export const deployCredentialVerifierStack = async (
-  clients: DeployClients,
-): Promise<DeployedContracts> => {
+export const deployCredentialVerifierStack = async (clients: DeployClients): Promise<DeployedContracts> => {
   const issuerRegistry = await deploy(clients, 'IssuerRegistry');
   const groth16Verifier = await deploy(clients, 'Groth16Verifier');
-  const credentialVerifier = await deploy(clients, 'CredentialVerifier', [
-    issuerRegistry,
-    groth16Verifier,
-  ]);
+  const credentialVerifier = await deploy(clients, 'CredentialVerifier', [issuerRegistry, groth16Verifier]);
   return { issuerRegistry, groth16Verifier, credentialVerifier };
 };

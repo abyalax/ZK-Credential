@@ -30,8 +30,7 @@ export interface OnChainProofEngineOptions {
 
 /** A contract revert (e.g. `UntrustedIssuer`) is a rejection; transport errors are not. */
 const isContractRevert = (error: unknown): boolean =>
-  error instanceof BaseError &&
-  error.walk((cause) => cause instanceof ContractFunctionRevertedError) !== null;
+  error instanceof BaseError && error.walk((cause) => cause instanceof ContractFunctionRevertedError) !== null;
 
 /**
  * `ProofEngine` whose verification goes through `CredentialVerifier` on the local chain.

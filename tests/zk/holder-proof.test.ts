@@ -77,11 +77,8 @@ const request = () => {
   };
 };
 
-const prove = (
-  engine: typeof holderEngine,
-  signedCredential: SignedCredential,
-  holderPrivateKey: HolderPrivateKey,
-) => engine.generate({ signedCredential, holderPrivateKey, request: request() });
+const prove = (engine: typeof holderEngine, signedCredential: SignedCredential, holderPrivateKey: HolderPrivateKey) =>
+  engine.generate({ signedCredential, holderPrivateKey, request: request() });
 
 describe('holder circuit variant: honest holder', () => {
   it('accepts the credential owner, who knows holderPrivateKey', async () => {
@@ -101,27 +98,21 @@ describe('holder circuit variant: attackers', () => {
   it('rejects someone who holds a copy of the credential but not the private key', async () => {
     const signedCredential = await issue(owner);
 
-    await expect(prove(holderEngine, signedCredential, attacker.privateKey)).rejects.toBeInstanceOf(
-      InfrastructureError,
-    );
+    await expect(prove(holderEngine, signedCredential, attacker.privateKey)).rejects.toBeInstanceOf(InfrastructureError);
   });
 
   it('rejects guessed secrets, including the public key used as a secret', async () => {
     const signedCredential = await issue(owner);
 
     for (const guess of ['0', '123', owner.publicKey]) {
-      await expect(
-        prove(holderEngine, signedCredential, asHolderPrivateKey(guess)),
-      ).rejects.toBeInstanceOf(InfrastructureError);
+      await expect(prove(holderEngine, signedCredential, asHolderPrivateKey(guess))).rejects.toBeInstanceOf(InfrastructureError);
     }
   });
 
   it('rejects a credential issued to another holder when proving with our own secret', async () => {
     const issuedToOther = await issue(attacker);
 
-    await expect(prove(holderEngine, issuedToOther, owner.privateKey)).rejects.toBeInstanceOf(
-      InfrastructureError,
-    );
+    await expect(prove(holderEngine, issuedToOther, owner.privateKey)).rejects.toBeInstanceOf(InfrastructureError);
   });
 
   it('rejects a credential whose holderPublicKey was swapped after signing', async () => {
@@ -132,9 +123,7 @@ describe('holder circuit variant: attackers', () => {
     };
 
     // Even with the attacker's own secret: the issuer signed the owner's holderPublicKey, not this one.
-    await expect(prove(holderEngine, swapped, attacker.privateKey)).rejects.toBeInstanceOf(
-      InfrastructureError,
-    );
+    await expect(prove(holderEngine, swapped, attacker.privateKey)).rejects.toBeInstanceOf(InfrastructureError);
   });
 });
 
@@ -144,9 +133,7 @@ describe('holder circuit variant: secret hygiene and ablation', () => {
     const proof = await prove(holderEngine, signedCredential, owner.privateKey);
     expect(JSON.stringify(proof)).not.toContain(owner.privateKey);
 
-    const failure = await prove(holderEngine, signedCredential, attacker.privateKey).catch(
-      (error: unknown) => error,
-    );
+    const failure = await prove(holderEngine, signedCredential, attacker.privateKey).catch((error: unknown) => error);
     const cause = (failure as Error).cause as Error | undefined;
     for (const text of [String(failure), String(cause?.message), String(cause)]) {
       expect(text).not.toContain(attacker.privateKey);

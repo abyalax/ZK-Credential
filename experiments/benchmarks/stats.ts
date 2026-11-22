@@ -14,10 +14,8 @@ export const summarize = (values: readonly number[]): Summary => {
   const n = sorted.length;
   const mean = sorted.reduce((sum, value) => sum + value, 0) / n;
   const middle = Math.floor(n / 2);
-  const median =
-    n % 2 === 0 ? ((sorted[middle - 1] ?? 0) + (sorted[middle] ?? 0)) / 2 : (sorted[middle] ?? 0);
-  const variance =
-    n > 1 ? sorted.reduce((sum, value) => sum + (value - mean) ** 2, 0) / (n - 1) : 0;
+  const median = n % 2 === 0 ? ((sorted[middle - 1] ?? 0) + (sorted[middle] ?? 0)) / 2 : (sorted[middle] ?? 0);
+  const variance = n > 1 ? sorted.reduce((sum, value) => sum + (value - mean) ** 2, 0) / (n - 1) : 0;
   return {
     n,
     mean,

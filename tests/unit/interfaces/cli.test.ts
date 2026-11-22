@@ -18,8 +18,7 @@ describe('runCli', () => {
     expect(await runCli([], io)).toBe(0);
     const text = out.join('');
     expect(text).toContain('Usage: pnpm cli');
-    for (const name of ['issue', 'challenge', 'prove', 'verify', 'bench'])
-      expect(text).toContain(name);
+    for (const name of ['issue', 'challenge', 'prove', 'verify', 'bench']) expect(text).toContain(name);
   });
 
   it('fails on an unknown command', async () => {
@@ -63,7 +62,6 @@ describe('parseGpa', () => {
   });
 
   it('rejects scaled, negative and out-of-range values', () => {
-    for (const bad of ['375', '-1', '4.01', '3.756', 'abc', ''])
-      expect(() => parseGpa(bad, 'gpa')).toThrow('--gpa');
+    for (const bad of ['375', '-1', '4.01', '3.756', 'abc', '']) expect(() => parseGpa(bad, 'gpa')).toThrow('--gpa');
   });
 });

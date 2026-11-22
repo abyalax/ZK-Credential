@@ -137,10 +137,7 @@ const generateOrUndefined =
     }
   };
 
-export const createScenarioContext = async (
-  variantName: VariantName,
-  artifactsDir?: string,
-): Promise<ScenarioContext> => {
+export const createScenarioContext = async (variantName: VariantName, artifactsDir?: string): Promise<ScenarioContext> => {
   const variant = VARIANTS[variantName];
   const parties = await createParties();
   const { issuer, rogueIssuer, signer, owner } = parties;
@@ -201,14 +198,10 @@ export interface Prepared {
 }
 
 /** Holder side: obtains a challenge from the verifier and tries to build a proof for it. */
-export const prepareAttempt = async (
-  ctx: ScenarioContext,
-  options: AttemptOptions = {},
-): Promise<Prepared> => {
+export const prepareAttempt = async (ctx: ScenarioContext, options: AttemptOptions = {}): Promise<Prepared> => {
   const session = options.session ?? ctx.session();
   const verifierId = options.verifierId ?? verifierA;
-  const challenge =
-    options.challenge ?? (await session.issueChallenge({ verifierId })).value.toString();
+  const challenge = options.challenge ?? (await session.issueChallenge({ verifierId })).value.toString();
   const signedCredential = options.signedCredential ?? (await ctx.signCredential());
   const proof = await ctx.generate(
     {
@@ -226,10 +219,7 @@ export const prepareAttempt = async (
 };
 
 /** Verifier side: runs the real verify use case (domain preconditions, then the circuit). */
-export const present = async (
-  prepared: Prepared,
-  options: PresentOptions = {},
-): Promise<Outcome> => {
+export const present = async (prepared: Prepared, options: PresentOptions = {}): Promise<Outcome> => {
   const { session, proof } = prepared;
   if (!proof) return PROVE_FAILED;
   if (options.advanceMs) session.clock.advance(options.advanceMs);

@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  asChallengeValue,
-  asVerifierId,
-  createChallenge,
-  evaluateChallenge,
-} from '../../../src/domain/index.js';
+import { asChallengeValue, asVerifierId, createChallenge, evaluateChallenge } from '../../../src/domain/index.js';
 
 const verifier = asVerifierId('verifier-a');
 const challenge = createChallenge({
@@ -17,24 +12,21 @@ const fresh = { challenge, consumedAt: undefined };
 
 describe('evaluateChallenge', () => {
   it('accepts a fresh challenge for the expected verifier', () => {
-    expect(evaluateChallenge({ stored: fresh, expectedVerifierId: verifier, now: 1_499 }).ok).toBe(
-      true,
-    );
+    expect(evaluateChallenge({ stored: fresh, expectedVerifierId: verifier, now: 1_499 }).ok).toBe(true);
   });
 
   it('rejects an unknown challenge', () => {
-    expect(
-      evaluateChallenge({ stored: undefined, expectedVerifierId: verifier, now: 1_000 }),
-    ).toEqual({
+    expect(evaluateChallenge({ stored: undefined, expectedVerifierId: verifier, now: 1_000 })).toEqual({
       ok: false,
       error: 'CHALLENGE_UNKNOWN',
     });
   });
 
   it('rejects a challenge issued for another verifier', () => {
-    expect(
-      evaluateChallenge({ stored: fresh, expectedVerifierId: asVerifierId('other'), now: 1_000 }),
-    ).toEqual({ ok: false, error: 'CHALLENGE_VERIFIER_MISMATCH' });
+    expect(evaluateChallenge({ stored: fresh, expectedVerifierId: asVerifierId('other'), now: 1_000 })).toEqual({
+      ok: false,
+      error: 'CHALLENGE_VERIFIER_MISMATCH',
+    });
   });
 
   it('rejects a consumed challenge', () => {

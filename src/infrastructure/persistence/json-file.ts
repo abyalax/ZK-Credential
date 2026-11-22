@@ -1,8 +1,7 @@
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
-const isNotFound = (error: unknown): boolean =>
-  error instanceof Error && 'code' in error && error.code === 'ENOENT';
+const isNotFound = (error: unknown): boolean => error instanceof Error && 'code' in error && error.code === 'ENOENT';
 
 /** Reads a JSON file, returning `fallback` when it does not exist yet. */
 export const readJsonFile = async <T>(path: string, fallback: T): Promise<T> => {

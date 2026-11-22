@@ -32,9 +32,7 @@ export const makeIssueChallenge =
     const value = deps.randomness.hex(CHALLENGE_RANDOM_BYTES);
     // Fail fast: a challenge the circuit cannot encode would only fail later, at proving time.
     if (!isCanonicalChallenge(value)) {
-      throw new TypeError(
-        `Randomness must return ${CHALLENGE_RANDOM_BYTES} bytes as lowercase hex for a challenge`,
-      );
+      throw new TypeError(`Randomness must return ${CHALLENGE_RANDOM_BYTES} bytes as lowercase hex for a challenge`);
     }
     const challenge = createChallenge({
       value: asChallengeValue(value),

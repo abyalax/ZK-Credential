@@ -3,20 +3,10 @@ import { err, ok } from '../../shared/index.js';
 import type { Gpa } from '../credential/index.js';
 import type { Issuer, IssuerBindingRejection, IssuerId, IssuerPublicKey } from '../issuer/index.js';
 import { evaluateIssuerBinding } from '../issuer/index.js';
-import type {
-  Challenge,
-  ChallengeRejection,
-  ChallengeValue,
-  StoredChallenge,
-  VerifierId,
-} from './challenge.js';
+import type { Challenge, ChallengeRejection, ChallengeValue, StoredChallenge, VerifierId } from './challenge.js';
 import { evaluateChallenge } from './challenge.js';
 
-export type RejectionReason =
-  | ChallengeRejection
-  | IssuerBindingRejection
-  | 'THRESHOLD_BELOW_REQUIRED'
-  | 'PROOF_INVALID';
+export type RejectionReason = ChallengeRejection | IssuerBindingRejection | 'THRESHOLD_BELOW_REQUIRED' | 'PROOF_INVALID';
 
 /** What a proof claims publicly. `PublicSignals` of a proof satisfies this shape. */
 export interface VerificationClaims {

@@ -16,8 +16,7 @@ import { hardhat } from 'viem/chains';
  * Hardhat's well-known dev account #0. It is public and only valid on a local Hardhat network,
  * so it is safe as a default for `chain:deploy` and must never hold real funds.
  */
-export const HARDHAT_DEV_PRIVATE_KEY: Hex =
-  '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
+export const HARDHAT_DEV_PRIVATE_KEY: Hex = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
 
 export const DEFAULT_LOCAL_RPC_URL = 'http://127.0.0.1:8545';
 

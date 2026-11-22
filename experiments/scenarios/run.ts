@@ -7,18 +7,11 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { REPOSITORY_ROOT } from '../../src/infrastructure/index.js';
+import { generateTimestamp, resolveScenariosPath } from '../results-utils.js';
 import { SCENARIOS } from './catalog.js';
 import { createScenarioContext } from './context.js';
 import { resultsToCsv, summarize, summaryToCsv } from './metrics.js';
-import {
-  expectedAcceptance,
-  type ScenarioResult,
-  VARIANT_NAMES,
-  type VariantName,
-} from './types.js';
-import { generateTimestamp, resolveScenariosPath } from '../results-utils.js';
-
-const RESULTS_DIR = join(REPOSITORY_ROOT, 'experiments', 'results');
+import { expectedAcceptance, type ScenarioResult, VARIANT_NAMES, type VariantName } from './types.js';
 
 const log = (message: string): void => {
   process.stdout.write(`${message}\n`);

@@ -26,11 +26,7 @@ afterAll(async () => {
 /** Computes the witness; rejects when any constraint is violated. */
 const witnessOf = async (gpa: bigint | number, gpaThreshold: bigint | number) => {
   const file = join(workDir, `witness-${Math.random().toString(36).slice(2)}.wtns`);
-  await snarkjs.wtns.calculate(
-    { gpa: gpa.toString(), gpaThreshold: gpaThreshold.toString() },
-    paths.wasm,
-    file,
-  );
+  await snarkjs.wtns.calculate({ gpa: gpa.toString(), gpaThreshold: gpaThreshold.toString() }, paths.wasm, file);
   return (await snarkjs.wtns.exportJson(file)) as bigint[];
 };
 

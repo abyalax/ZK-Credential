@@ -28,8 +28,7 @@ export interface CliContext {
 
 export const DEFAULT_STATE_DIR = join(REPOSITORY_ROOT, '.zk-state');
 
-export const statePath = (context: CliContext, name: string): string =>
-  join(context.stateDir, name);
+export const statePath = (context: CliContext, name: string): string => join(context.stateDir, name);
 
 export const createDefaultContext = (
   env: Readonly<Record<string, string | undefined>>,
@@ -48,10 +47,7 @@ export const createDefaultContext = (
 };
 
 /** Opens the container for one command and always releases snarkjs' worker threads. */
-export const withContainer = async <T>(
-  context: CliContext,
-  task: (container: Container) => Promise<T>,
-): Promise<T> => {
+export const withContainer = async <T>(context: CliContext, task: (container: Container) => Promise<T>): Promise<T> => {
   const container = await context.openContainer();
   try {
     return await task(container);
@@ -75,13 +71,11 @@ export const loadHolderKeys = async (context: CliContext): Promise<HolderKeyFile
     statePath(context, HOLDER_KEY_FILE),
     undefined,
   );
-  if (!(stored?.publicKey && stored.privateKey))
-    throw new CliError('No holder key found. Run `pnpm cli keygen` first.');
+  if (!(stored?.publicKey && stored.privateKey)) throw new CliError('No holder key found. Run `pnpm cli keygen` first.');
   return {
     publicKey: asHolderPublicKey(stored.publicKey),
     privateKey: asHolderPrivateKey(stored.privateKey),
   };
 };
 
-export const printJson = (io: CliIo, value: unknown): void =>
-  io.stdout(JSON.stringify(value, null, 2));
+export const printJson = (io: CliIo, value: unknown): void => io.stdout(JSON.stringify(value, null, 2));

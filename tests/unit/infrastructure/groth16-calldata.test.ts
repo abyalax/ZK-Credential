@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  FULL_PUBLIC_SIGNAL_COUNT,
-  toVerifyCredentialArgs,
-} from '../../../src/infrastructure/index.js';
+import { FULL_PUBLIC_SIGNAL_COUNT, toVerifyCredentialArgs } from '../../../src/infrastructure/index.js';
 import type { PayloadContent } from '../../../src/infrastructure/proof-system/proof-payload.js';
 
 const content = (publicSignals: string[]): PayloadContent => ({
@@ -35,12 +32,7 @@ describe('groth16 calldata mapping', () => {
 
   it('keeps the public signal order issuerKeyHash, threshold, challenge, verifierId', () => {
     expect(FULL_PUBLIC_SIGNAL_COUNT).toBe(4);
-    expect(toVerifyCredentialArgs(content(['1', '2', '3', '4'])).pubSignals).toEqual([
-      1n,
-      2n,
-      3n,
-      4n,
-    ]);
+    expect(toVerifyCredentialArgs(content(['1', '2', '3', '4'])).pubSignals).toEqual([1n, 2n, 3n, 4n]);
   });
 
   it('rejects a payload with the wrong number of public signals', () => {

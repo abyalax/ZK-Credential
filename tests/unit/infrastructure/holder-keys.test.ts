@@ -66,9 +66,7 @@ describe('holder key derivation', () => {
     expect(publicKey).toMatch(/^(?:0|[1-9]\d*)$/);
     expect(BigInt(publicKey)).toBeLessThan(BN254_FIELD_ORDER);
     // Pins the derivation (Poseidon of one input, circomlibjs) against accidental changes.
-    expect(publicKey).toBe(
-      '9904028930859697121695025471312564917337032846528014134060777877259199866166',
-    );
+    expect(publicKey).toBe('9904028930859697121695025471312564917337032846528014134060777877259199866166');
     expect(publicKey).not.toBe(await deriveHolderPublicKey(asHolderPrivateKey('124')));
   });
 
@@ -90,11 +88,7 @@ describe('holder key derivation', () => {
 describe('holder private key hygiene', () => {
   it('keeps the secret out of JSON, spreading and inspection of the key pair', async () => {
     const pair = await generateHolderKeyPair(fixedRandom(0x42));
-    const rendered = [
-      JSON.stringify(pair),
-      inspect(pair, { depth: 4 }),
-      JSON.stringify({ ...pair }),
-    ];
+    const rendered = [JSON.stringify(pair), inspect(pair, { depth: 4 }), JSON.stringify({ ...pair })];
 
     for (const text of rendered) expect(text).not.toContain(pair.privateKey);
     expect(JSON.stringify(pair)).toContain(pair.publicKey);
@@ -128,9 +122,7 @@ describe('parseFieldElement', () => {
 
   it('accepts zero and the largest field element', () => {
     expect(parseFieldElement('0', 'value')).toBe(0n);
-    expect(parseFieldElement((BN254_FIELD_ORDER - 1n).toString(), 'value')).toBe(
-      BN254_FIELD_ORDER - 1n,
-    );
+    expect(parseFieldElement((BN254_FIELD_ORDER - 1n).toString(), 'value')).toBe(BN254_FIELD_ORDER - 1n);
   });
 });
 
@@ -138,9 +130,7 @@ describe('holder key in the credential commitment', () => {
   it('uses holderPublicKey as the third committed field', async () => {
     const { input } = await buildFixture();
 
-    expect(credentialCommitmentInputs(input.signedCredential.credential)[2]).toBe(
-      BigInt(testHolderPublicKey),
-    );
+    expect(credentialCommitmentInputs(input.signedCredential.credential)[2]).toBe(BigInt(testHolderPublicKey));
   });
 });
 

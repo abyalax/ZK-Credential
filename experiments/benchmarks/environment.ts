@@ -8,9 +8,9 @@ const TOOLS = ['snarkjs', 'circomlibjs', 'circomlib', 'circom2', 'hardhat', 'vie
 
 const packageVersion = (name: string): string => {
   try {
-    const manifest = JSON.parse(
-      readFileSync(join(REPOSITORY_ROOT, 'node_modules', name, 'package.json'), 'utf8'),
-    ) as { version: string };
+    const manifest = JSON.parse(readFileSync(join(REPOSITORY_ROOT, 'node_modules', name, 'package.json'), 'utf8')) as {
+      version: string;
+    };
     return manifest.version;
   } catch {
     return 'unknown';

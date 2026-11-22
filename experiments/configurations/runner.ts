@@ -3,10 +3,7 @@ import * as snarkjs from 'snarkjs';
 import type { Credential, SignedCredential } from '../../src/domain/index.js';
 import { asChallengeValue } from '../../src/domain/index.js';
 import { credentialCommitmentInputs } from '../../src/infrastructure/cryptography/credential-encoding.js';
-import {
-  parseIssuerPublicKey,
-  parseIssuerSignature,
-} from '../../src/infrastructure/cryptography/eddsa-credential-signer.js';
+import { parseIssuerPublicKey, parseIssuerSignature } from '../../src/infrastructure/cryptography/eddsa-credential-signer.js';
 import { circuitArtifactPaths } from '../../src/infrastructure/proof-system/artifact-paths.js';
 import type { PayloadContent } from '../../src/infrastructure/proof-system/proof-payload.js';
 import { gpa, verifierA } from '../../tests/support/harness.js';
@@ -70,11 +67,7 @@ const createZkRunner = async (circuit: NonNullable<Configuration['circuit']>): P
  * EdDSA-Poseidon signature over its commitment, then applies the GPA policy in the clear.
  */
 const createBaselineRunner = async (): Promise<Runner> => {
-  const [eddsa, poseidon, parties] = await Promise.all([
-    buildEddsa(),
-    buildPoseidon(),
-    createParties(),
-  ]);
+  const [eddsa, poseidon, parties] = await Promise.all([buildEddsa(), buildPoseidon(), createParties()]);
   const signed: SignedCredential = await makeSignCredential(parties)();
   const trustedIssuerKey = parties.issuer.publicKey;
 
@@ -97,10 +90,7 @@ const createBaselineRunner = async (): Promise<Runner> => {
       const { R8x, R8y, S } = parseIssuerSignature(disclosed.signature);
       const [Ax, Ay] = parseIssuerPublicKey(trustedIssuerKey);
       const commitment = poseidon(credentialCommitmentInputs(disclosed.credential));
-      const signatureValid = eddsa.verifyPoseidon(commitment, { R8: [F.e(R8x), F.e(R8y)], S }, [
-        F.e(Ax),
-        F.e(Ay),
-      ]);
+      const signatureValid = eddsa.verifyPoseidon(commitment, { R8: [F.e(R8x), F.e(R8y)], S }, [F.e(Ax), F.e(Ay)]);
       return signatureValid && disclosed.credential.gpa >= REQUIRED_THRESHOLD;
     },
     close: async () => {},

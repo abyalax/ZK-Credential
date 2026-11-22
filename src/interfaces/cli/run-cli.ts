@@ -34,11 +34,7 @@ const reportError = (error: unknown, io: CliIo): number => {
 };
 
 /** Imperative shell entry: maps argv to a command and returns a process exit code. */
-export const runCli = async (
-  argv: readonly string[],
-  io: CliIo,
-  context?: CliContext,
-): Promise<number> => {
+export const runCli = async (argv: readonly string[], io: CliIo, context?: CliContext): Promise<number> => {
   const [name = 'help', ...rest] = argv;
   const command = commands.find((candidate) => candidate.name === name);
   if (!command) {

@@ -44,8 +44,7 @@ afterAll(async () => {
   await Promise.all([fullEngine?.close(), holderEngine?.close()]);
 });
 
-const harness = (proofEngine: SnarkjsProofEngine = fullEngine) =>
-  createHarness({ proofEngine, signer, issuer, holder });
+const harness = (proofEngine: SnarkjsProofEngine = fullEngine) => createHarness({ proofEngine, signer, issuer, holder });
 
 interface Payload {
   proof: unknown;
@@ -265,9 +264,7 @@ describe('full circuit variant: challenge lifecycle with real proofs', () => {
     const h = harness();
     const proof = await h.presentProof(await h.issueTestCredential());
 
-    const results = await Promise.all(
-      Array.from({ length: 4 }, () => h.verifyCredential({ proof, policy })),
-    );
+    const results = await Promise.all(Array.from({ length: 4 }, () => h.verifyCredential({ proof, policy })));
 
     expect(results.filter((result) => result.ok)).toHaveLength(1);
     for (const result of results.filter((item) => !item.ok)) {

@@ -1,0 +1,5 @@
+configuration,honest_total,honest_accepted,verification_success_rate,attack_total,attack_rejected,attack_rejection_rate,open_attacks,unexpected
+threshold,4,4,1,22,13,0.5909,credential-tampered;signature-other-issuer;signature-malformed;holder-without-key;holder-secret-guessed;holder-secret-out-of-field;replay-relabelled-challenge;relay-to-other-verifier;claims-challenge-out-of-field,
+issuer,4,4,1,22,16,0.7273,holder-without-key;holder-secret-guessed;holder-secret-out-of-field;replay-relabelled-challenge;relay-to-other-verifier;claims-challenge-out-of-field,
+holder,4,4,1,22,19,0.8636,replay-relabelled-challenge;relay-to-other-verifier;claims-challenge-out-of-field,
+full,4,4,1,22,22,1,,

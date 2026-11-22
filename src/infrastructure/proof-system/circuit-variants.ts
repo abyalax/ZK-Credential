@@ -7,10 +7,7 @@ import {
   encodeVerifierId,
   parseFieldElement,
 } from '../cryptography/credential-encoding.js';
-import {
-  parseIssuerPublicKey,
-  parseIssuerSignature,
-} from '../cryptography/eddsa-credential-signer.js';
+import { parseIssuerPublicKey, parseIssuerSignature } from '../cryptography/eddsa-credential-signer.js';
 import { issuerKeyHash } from '../cryptography/issuer-key-hash.js';
 
 /**
@@ -44,10 +41,7 @@ export const thresholdVariant: CircuitVariant = {
   expectedPublicSignals: (claims) => [claims.gpaThreshold.toString()],
 };
 
-const issuerCircuitInputs = (
-  { signedCredential, request }: ProofGenerationInput,
-  issuer?: Issuer,
-): CircuitSignals => {
+const issuerCircuitInputs = ({ signedCredential, request }: ProofGenerationInput, issuer?: Issuer): CircuitSignals => {
   const credential = signedCredential.credential;
   const fields = credentialCommitmentInputs(credential);
   if (!issuer) throw new TypeError('Issuer circuit inputs require the registered issuer');

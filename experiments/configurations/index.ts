@@ -58,7 +58,6 @@ export const CONFIGURATIONS: readonly Configuration[] = [
 
 export const findConfiguration = (id: string): Configuration => {
   const found = CONFIGURATIONS.find((configuration) => configuration.id === id);
-  if (!found)
-    throw new Error(`Unknown configuration "${id}". Available: ${CONFIGURATION_IDS.join(', ')}`);
+  if (!found) throw new Error(`Unknown configuration "${id}". Available: ${CONFIGURATION_IDS.join(', ')}`);
   return found;
 };

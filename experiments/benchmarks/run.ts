@@ -6,13 +6,13 @@
  */
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { runWorker as runWorkerImpl, type WorkerResult, RESULT_PREFIX } from './worker.js';
 import { REPOSITORY_ROOT } from '../../src/infrastructure/index.js';
 import { CONFIGURATION_IDS, CONFIGURATIONS, findConfiguration } from '../configurations/index.js';
+import { generateTimestamp, resolveResultsPath } from '../results-utils.js';
 import { describeEnvironment } from './environment.js';
 import { type GasReport, measureProposedModelGas } from './gas.js';
 import { summarize } from './stats.js';
-import { generateTimestamp, resolveResultsPath } from '../results-utils.js';
+import { runWorker as runWorkerImpl, type WorkerResult } from './worker.js';
 
 const log = (message: string): void => {
   process.stdout.write(`${message}\n`);
@@ -21,8 +21,7 @@ const log = (message: string): void => {
 const numberFlag = (args: readonly string[], name: string, fallback: number): number => {
   const raw = args.find((arg) => arg.startsWith(`--${name}=`))?.split('=')[1];
   const value = raw === undefined ? fallback : Number(raw);
-  if (!Number.isInteger(value) || value < 1)
-    throw new Error(`--${name} must be a positive integer`);
+  if (!Number.isInteger(value) || value < 1) throw new Error(`--${name} must be a positive integer`);
   return value;
 };
 
@@ -50,11 +49,7 @@ const parseArguments = (args: string[]): BenchmarkOptions => ({
 const resolveConfigurations = (requested: string[]): string[] =>
   requested.length > 0 ? requested.map((id) => findConfiguration(id).id) : CONFIGURATION_IDS;
 
-const executeBenchmarks = async (
-  ids: string[],
-  runs: number,
-  warmup: number,
-): Promise<WorkerResult[]> => {
+const executeBenchmarks = async (ids: string[], runs: number, warmup: number): Promise<WorkerResult[]> => {
   const results: WorkerResult[] = [];
 
   for (const id of ids) {
@@ -65,9 +60,7 @@ const executeBenchmarks = async (
   return results;
 };
 
-const resolveGasReport = async (
-  args: string[],
-): Promise<{ gas: GasReport; mode: 'with-gas' | 'no-gas' }> => {
+const resolveGasReport = async (args: string[]): Promise<{ gas: GasReport; mode: 'with-gas' | 'no-gas' }> => {
   const noGas = args.includes('--no-gas');
   const gas: GasReport = noGas
     ? {
@@ -77,9 +70,7 @@ const resolveGasReport = async (
       }
     : await measureProposedModelGas();
 
-  log(
-    `gas: ${gas.status}${gas.verifyCredentialGas === null ? '' : ` (${gas.verifyCredentialGas})`}`,
-  );
+  log(`gas: ${gas.status}${gas.verifyCredentialGas === null ? '' : ` (${gas.verifyCredentialGas})`}`);
 
   return { gas, mode: noGas ? 'no-gas' : 'with-gas' };
 };
@@ -138,10 +129,7 @@ const writeBenchmarkResults = async (
   const suffix = report.mode === 'no-gas' ? '-nogas' : '';
 
   await Promise.all([
-    writeFile(
-      join(resultsDir, `p6-benchmark${suffix}.json`),
-      `${JSON.stringify(report, null, 2)}\n`,
-    ),
+    writeFile(join(resultsDir, `p6-benchmark${suffix}.json`), `${JSON.stringify(report, null, 2)}\n`),
     writeFile(
       join(resultsDir, `p6-benchmark-summary${suffix}.csv`),
       csv(

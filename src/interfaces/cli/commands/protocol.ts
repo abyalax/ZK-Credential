@@ -1,11 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import {
-  asChallengeValue,
-  asCredentialId,
-  asVerifierId,
-  type Proof,
-} from '../../../domain/index.js';
+import { asChallengeValue, asCredentialId, asVerifierId, type Proof } from '../../../domain/index.js';
 import { writeJsonFile } from '../../../infrastructure/index.js';
 import { CliError, parseGpa, requireFlag } from '../args.js';
 import { loadHolderKeys, printJson, statePath, withContainer } from '../context.js';
@@ -16,20 +11,16 @@ const parseProof = (text: string): Proof => {
   const proof = value as Partial<Proof> | null;
   const signals = proof?.publicSignals;
   if (proof?.protocol !== 'groth16' || typeof proof.payload !== 'string' || !signals)
-    throw new CliError(
-      'Proof file is not a valid proof (expected protocol, payload, publicSignals)',
-    );
+    throw new CliError('Proof file is not a valid proof (expected protocol, payload, publicSignals)');
   return proof as Proof;
 };
 
 export const issue: Command = {
   name: 'issue',
-  description:
-    'Issue a signed credential: --student-number --name --degree --graduation-date --gpa',
+  description: 'Issue a signed credential: --student-number --name --degree --graduation-date --gpa',
   run: (args, context, io) =>
     withContainer(context, async (container) => {
-      const holderPublicKey =
-        args.flags.get('holder-public-key') ?? (await loadHolderKeys(context)).publicKey;
+      const holderPublicKey = args.flags.get('holder-public-key') ?? (await loadHolderKeys(context)).publicKey;
       const result = await container.issueCredential({
         issuerId: container.issuer.id,
         holderPublicKey,
@@ -63,8 +54,7 @@ export const challenge: Command = {
 
 export const prove: Command = {
   name: 'prove',
-  description:
-    'Holder: build a proof: --credential-id --challenge --verifier-id --threshold [--out]',
+  description: 'Holder: build a proof: --credential-id --challenge --verifier-id --threshold [--out]',
   run: (args, context, io) =>
     withContainer(context, async (container) => {
       const holder = await loadHolderKeys(context);
@@ -79,8 +69,7 @@ export const prove: Command = {
         },
       });
       if (!result.ok) throw new CliError(`Proving failed: ${result.error}`);
-      const out =
-        args.flags.get('out') ?? statePath(context, join('proofs', `${challengeValue}.json`));
+      const out = args.flags.get('out') ?? statePath(context, join('proofs', `${challengeValue}.json`));
       await writeJsonFile(out, result.value);
       printJson(io, { proofFile: out, publicSignals: result.value.publicSignals });
       return 0;

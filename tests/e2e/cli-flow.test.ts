@@ -25,11 +25,7 @@ let context: CliContext;
 const run = async (...argv: string[]) => {
   const out: string[] = [];
   const errors: string[] = [];
-  const code = await runCli(
-    argv,
-    { stdout: (t) => out.push(t), stderr: (t) => errors.push(t) },
-    context,
-  );
+  const code = await runCli(argv, { stdout: (t) => out.push(t), stderr: (t) => errors.push(t) }, context);
   const text = out.join('\n');
   return { code, errors: errors.join('\n'), json: text ? JSON.parse(text) : undefined };
 };
@@ -99,12 +95,7 @@ describe('CLI -> local chain -> accepted', () => {
     expect(JSON.stringify(proved.json)).not.toContain('privateKey');
     proofFile = proved.json.proofFile;
 
-    const verified = await run(
-      'verify',
-      `--proof=${proofFile}`,
-      `--verifier-id=${VERIFIER}`,
-      '--threshold=3.50',
-    );
+    const verified = await run('verify', `--proof=${proofFile}`, `--verifier-id=${VERIFIER}`, '--threshold=3.50');
     expect(verified.code).toBe(0);
     expect(verified.json).toMatchObject({ accepted: true, verifierId: VERIFIER });
   });
@@ -112,12 +103,7 @@ describe('CLI -> local chain -> accepted', () => {
 
 describe('CLI -> local chain -> rejected', () => {
   it('rejects replay of the same proof (exit code 2)', async () => {
-    const replay = await run(
-      'verify',
-      `--proof=${proofFile}`,
-      `--verifier-id=${VERIFIER}`,
-      '--threshold=3.50',
-    );
+    const replay = await run('verify', `--proof=${proofFile}`, `--verifier-id=${VERIFIER}`, '--threshold=3.50');
     expect(replay.code).toBe(2);
     expect(replay.json).toEqual({ accepted: false, reason: 'CHALLENGE_ALREADY_USED' });
   });
