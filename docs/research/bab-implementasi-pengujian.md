@@ -1,8 +1,8 @@
 # Draf Bab Implementasi dan Pengujian
 
 Draf dari hasil P5 (skenario serangan) dan P6 (kinerja dan ablation). Angka P6 diambil dari
-`experiments/results/2026-11-22-081902/gas/p6-table.md`. Angka hasil terukur P5 belum ada di repo:
-jalankan `pnpm experiment:p5`, lalu isi tabel 4.2 dari `experiments/results/`.
+`experiments/results/2026-11-22-081902/gas/p6-table.md`. Angka P5 dari
+`experiments/results/2026-11-22-212627/scenarios/p5-summary.csv`.
 
 ## 4.1 Implementasi
 
@@ -28,22 +28,24 @@ dan malformed (`experiments/scenarios/catalog.ts`). Tiap skenario dijalankan pad
 Groth16 nyata. Setiap celah yang terbuka pada varian tertentu dicatat di katalog (`openIn`), dan
 `tests/security/attack-scenarios.test.ts` gagal bila hasil menyimpang dari katalog.
 
-Celah yang diharapkan menurut katalog (bukan hasil ukur):
+Hasil terukur (`pnpm experiment:p5`, 2026-11-22):
 
-| Konfigurasi | Serangan terbuka | Serangan ditolak | Attack rejection rate yang diharapkan |
-| ----------- | ---------------- | ---------------- | ------------------------------------- |
-| B1          | 9 dari 22        | 13               | 13/22 = 59,1%                         |
-| B2          | 6 dari 22        | 16               | 16/22 = 72,7%                         |
-| B3          | 3 dari 22        | 19               | 19/22 = 86,4%                         |
-| B4          | 0 dari 22        | 22               | 22/22 = 100%                          |
+| Konfigurasi | Verification success rate | Serangan terbuka | Serangan ditolak | Attack rejection rate |
+| ----------- | ------------------------- | ---------------- | ---------------- | --------------------- |
+| B1          | 4/4 = 100%                | 9 dari 22        | 13               | 13/22 = 59,1%         |
+| B2          | 4/4 = 100%                | 6 dari 22        | 16               | 16/22 = 72,7%         |
+| B3          | 4/4 = 100%                | 3 dari 22        | 19               | 19/22 = 86,4%         |
+| B4          | 4/4 = 100%                | 0 dari 22        | 22               | 22/22 = 100%          |
+
+Tidak ada skenario yang menyimpang dari katalog (kolom `unexpected` kosong pada semua konfigurasi).
 
 Celah B1 adalah `credential-tampered`, `signature-other-issuer`, `signature-malformed`, tiga skenario
 holder, dan tiga skenario replay yang berbasis relabel (`replay-relabelled-challenge`,
 `relay-to-other-verifier`, `claims-challenge-out-of-field`). B2 menutup tiga yang pertama, B3 menutup
 tiga skenario holder, dan B4 menutup tiga skenario replay.
 
-Tabel terukur (verification success rate dan attack rejection rate per konfigurasi): TODO, isi dari
-hasil `pnpm experiment:p5`.
+Hanya B4 yang menolak semua serangan, sedangkan semua konfigurasi menerima seluruh skenario honest.
+Data per skenario ada di `p5-attack-scenarios.csv` dan `.json` pada folder hasil yang sama.
 
 ## 4.3 Evaluasi kinerja (P6)
 

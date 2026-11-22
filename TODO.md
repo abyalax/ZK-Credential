@@ -163,7 +163,33 @@
 
 - [x] Finalisasi `docs/protocol/`; update `overview.md` (catatan composition root sudah diganti, baris infrastructure dan interfaces diperbarui)
 - [x] Petakan setiap RQ ke bukti (test atau eksperimen) di `docs/research/rq-evidence.md`. Nomor RQ1-RQ3 perlu diselaraskan dengan proposal
-- [x] Draf Bab Implementasi dan Pengujian dari hasil P5 dan P6: `docs/research/bab-implementasi-pengujian.md`. Tabel P5 terukur belum diisi, jalankan `pnpm experiment:p5` di mesin biasa
+- [x] Draf Bab Implementasi dan Pengujian dari hasil P5 dan P6: `docs/research/bab-implementasi-pengujian.md`. Tabel P5 terukur sudah diisi dari `experiments/results/2026-11-22-212627/`
+
+## P9 - Finalisasi Skripsi
+
+Infrastruktur (API, database, frontend) tidak dibutuhkan untuk klaim riset. Cakupan tetap CLI + test suite (D4); hanya item bertanda "kondisional" yang dikerjakan bila diminta.
+
+Prioritas tinggi:
+
+- [ ] Selaraskan RQ1-RQ3 dengan teks proposal, lalu isi nomor RQ di kolom pertama `docs/research/rq-evidence.md`
+- [ ] Baseline SD-JWT (D8, D9): belum ada di repo (`experiments/configurations/` hanya memuat A-B4). Implementasikan sebagai konfigurasi pembanding, masukkan ke P5 (skenario serangan yang berlaku) dan P6 (waktu issue, present, verify; ukuran payload)
+- [ ] Tulis batasan antarmuka di Bab 1: sistem berupa CLI dan test suite, tanpa API, database, atau frontend; sebut bahwa React/Next.js di proposal awal tidak dikerjakan (D4)
+- [ ] Tulis Bab 4 pembahasan: interpretasi ablation B1 -> B4, trade-off privasi vs biaya (A vs B4), dan perbandingan dengan DIAR, ZKBAR-V, Cross-border Candidate Credential Verification, VeriZKP
+- [ ] Tulis klaim kontribusi dan batasan di Bab 1 dan Bab 5 sesuai rencana v1.5 (integrasi tiga mekanisme dalam satu circuit, evaluasi ablation dan serangan sistematis; revocation di luar cakupan, D7)
+
+Prioritas sedang:
+
+- [ ] Ulang P6 pada mesin idle (tutup aplikasi lain, daya tersambung) dan laporkan median; std B3 dan B4 besar sehingga selisih B2 -> B3 -> B4 tidak bisa dibaca sebagai biaya per mekanisme
+- [ ] Tambahkan ke `threats-to-validity.md`: katalog 22 serangan disusun penulis dan tidak menjamin kelengkapan (bukan bukti formal), serta hasil P5 hanya berlaku pada katalog itu
+- [ ] Tambahkan ke `threats-to-validity.md`: attack rejection rate B1-B3 ditentukan oleh `openIn` di katalog; jelaskan bahwa test `attack-scenarios.test.ts` memastikan hasil nyata sama dengan katalog
+- [ ] Pertimbangkan ceremony ptau multi-kontributor (atau jelaskan sebagai batasan) agar klaim kunci tidak bisa dipertanyakan
+- [ ] Tag rilis untuk membekukan hasil eksperimen (lihat item terbuka di P7)
+
+Kondisional (hanya bila dosen atau penguji meminta demo):
+
+- [ ] Adapter Express tipis di atas use case yang ada: endpoint challenge dan verify saja, tanpa UI, store tetap lewat port
+- [ ] Store berbasis database sebagai pengganti file store `.zk-state/` (juga menutup celah atomicity `markConsumed` antar-proses di `threats-to-validity.md`)
+- [ ] Frontend minimal untuk demo, hanya bila diminta secara eksplisit
 
 Notes:
 
