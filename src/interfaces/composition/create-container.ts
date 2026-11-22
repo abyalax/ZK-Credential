@@ -1,6 +1,13 @@
-import { createPublicClient, createWalletClient, http } from 'viem';
+import {
+  createPublicClient,
+  createWalletClient,
+  http,
+  type PublicClient,
+  type WalletClient,
+} from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { hardhat } from 'viem/chains';
+import type { ChallengeStore, CredentialRepository } from '../../application/index.js';
 import {
   makeGenerateProof,
   makeIssueChallenge,
@@ -27,16 +34,28 @@ import type { AppConfig } from './config.js';
  * off-chain with snarkjs and verified through `CredentialVerifier` on the local chain; the issuer
  * registry is read from chain; challenges and credentials stay in memory (hybrid enforcement).
  */
-export const createContainer = async (config: AppConfig) => {
+export interface ContainerOverrides {
+  /** Persistent stores for the CLI; default to in-memory. */
+  readonly credentials?: CredentialRepository;
+  readonly challenges?: ChallengeStore;
+  /** Injected chain clients (e.g. the in-process Hardhat network in e2e tests). */
+  readonly publicClient?: PublicClient;
+  readonly walletClient?: WalletClient;
+}
+
+export const createContainer = async (config: AppConfig, overrides: ContainerOverrides = {}) => {
   const { chain } = config;
-  const publicClient = createPublicClient({ chain: hardhat, transport: http(chain.rpcUrl) });
-  const walletClient = createWalletClient({
-    chain: hardhat,
-    transport: http(chain.rpcUrl),
-    ...(chain.registryOwnerPrivateKey
-      ? { account: privateKeyToAccount(chain.registryOwnerPrivateKey) }
-      : {}),
-  });
+  const publicClient =
+    overrides.publicClient ?? createPublicClient({ chain: hardhat, transport: http(chain.rpcUrl) });
+  const walletClient =
+    overrides.walletClient ??
+    createWalletClient({
+      chain: hardhat,
+      transport: http(chain.rpcUrl),
+      ...(chain.registryOwnerPrivateKey
+        ? { account: privateKeyToAccount(chain.registryOwnerPrivateKey) }
+        : {}),
+    });
 
   const signer = await createEddsaCredentialSigner(config.issuer.privateKey);
   const issuer: Issuer = {
@@ -61,8 +80,8 @@ export const createContainer = async (config: AppConfig) => {
 
   const clock = systemClock;
   const randomness = cryptoRandomness;
-  const credentials = createInMemoryCredentialRepository();
-  const challenges = createInMemoryChallengeStore();
+  const credentials = overrides.credentials ?? createInMemoryCredentialRepository();
+  const challenges = overrides.challenges ?? createInMemoryChallengeStore();
 
   return {
     issuer,

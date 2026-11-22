@@ -7,6 +7,9 @@ coverage/
 !.env.example
 *.patch
 
+# Local CLI state: credentials, challenges, holder private key, proofs (never commit)
+.zk-state/
+
 # zk-SNARK build artifacts (regenerate via scripts, never commit)
 circuits/artifacts/*
 !circuits/artifacts/.gitkeep

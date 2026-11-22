@@ -15,7 +15,7 @@ import {
  * P5.1: every scenario runs with real Groth16 proofs against every circuit variant. A variant is
  * expected to accept an attack only where the scenario lists it in `openIn` (a documented
  * ablation gap); the proposed model (`full`) must reject every attack for the stated reason.
- * Needs `pnpm zk:setup` (run by `pnpm test:zk` and `pnpm test:security`).
+ * Needs `pnpm setup:zk` (run by `pnpm test:zk` and `pnpm test:security`).
  */
 
 describe.each(

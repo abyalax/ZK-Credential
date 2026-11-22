@@ -2,7 +2,7 @@
 
 ## Internal validity
 
-- **Local powers of tau.** `pnpm zk:setup` runs a single-contributor ceremony. Proving and
+- **Local powers of tau.** `pnpm setup:zk` runs a single-contributor ceremony. Proving and
   verification costs are representative, but the keys are not trustworthy. Research use only.
 - **Challenge store is in-memory.** Replay protection is evaluated against a process-local store.
   Its cost is excluded from the benchmarks (verification time is pure cryptographic
@@ -31,3 +31,10 @@
 - Results depend on the recorded hardware and tool versions (`environment` in
   `experiments/results/p6-benchmark.json`) and should not be generalised across machines.
 - Groth16 on BN254 with circom/snarkjs only; other proof systems are not compared.
+
+## CLI state (P7)
+
+- The CLI keeps challenges and credentials in JSON files under `.zk-state/`. `markConsumed` is
+  atomic inside one process only; two CLI processes verifying the same proof at the same instant
+  could both pass. The in-memory store of the benchmarks and security tests does not have this gap.
+- Credentials and the holder private key are stored unencrypted in the state directory.

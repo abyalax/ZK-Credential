@@ -38,7 +38,7 @@ export const loadContractArtifact = async (
     : undefined;
   if (!path)
     throw new InfrastructureError(
-      `Artifact for contract "${name}" not found in ${artifactsDir}. Run \`pnpm zk:setup\`, \`pnpm chain:sync\` and \`pnpm chain:build\` first.`,
+      `Artifact for contract "${name}" not found in ${artifactsDir}. Run \`pnpm setup:zk\`, \`pnpm chain:sync\` and \`pnpm chain:build\` first.`,
     );
   const { abi, bytecode } = JSON.parse(await readFile(path, 'utf8')) as ContractArtifact;
   return { abi, bytecode };

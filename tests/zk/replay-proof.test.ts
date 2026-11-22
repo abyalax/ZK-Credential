@@ -16,7 +16,7 @@ import { FORGED_PAYLOAD } from '../support/fakes.js';
 import { createHarness, gpa, verifierA, verifierB } from '../support/harness.js';
 
 /**
- * Real Groth16 proofs for the "full" circuit variant (P3). Needs `pnpm zk:setup` (run by
+ * Real Groth16 proofs for the "full" circuit variant (P3). Needs `pnpm setup:zk` (run by
  * `pnpm test:zk`). The use cases are the same ones the fake-engine replay tests drive.
  */
 

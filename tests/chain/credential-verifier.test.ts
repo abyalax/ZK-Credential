@@ -23,7 +23,7 @@ import { type LocalChain, startLocalChain } from './support/local-chain.js';
 
 /**
  * P4.3: contract tests on the in-process Hardhat network with real Groth16 proofs of the `full`
- * circuit. Needs `pnpm zk:setup full`, `pnpm chain:sync` and `pnpm chain:build` (`pnpm test:chain`).
+ * circuit. Needs `pnpm setup:zk full`, `pnpm chain:sync` and `pnpm chain:build` (`pnpm test:chain`).
  */
 
 const policy = { verifierId: verifierA, requiredGpaThreshold: gpa(300) };

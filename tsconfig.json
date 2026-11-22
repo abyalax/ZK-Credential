@@ -22,6 +22,7 @@
     "experiments",
     "vitest.config.ts",
     "vitest.zk.config.ts",
-    "vitest.chain.config.ts"
+    "vitest.chain.config.ts",
+    "vitest.e2e.config.ts"
   ]
 }

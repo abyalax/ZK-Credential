@@ -2,7 +2,7 @@
  * P5.2: runs every attack scenario against every circuit variant (configuration) with real
  * proofs, then writes structured results to experiments/results/.
  *
- * Usage: pnpm experiment:p5 [variant ...]   (needs `pnpm zk:setup`; the script runs it first)
+ * Usage: pnpm experiment:p5 [variant ...]   (needs `pnpm setup:zk`; the script runs it first)
  */
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';

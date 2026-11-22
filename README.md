@@ -24,19 +24,48 @@ pnpm experiment:p5   # runs P5 attack-scenario experiments (generates JSON/CSV r
 pnpm cli help
 ```
 
+## Quickstart: one end-to-end demo
+
+Local research setup only: the Hardhat dev key and the trusted setup below are not for real use.
+
+```bash
+pnpm install
+pnpm setup:zk full && pnpm chain:sync && pnpm chain:build
+
+# terminal 1: local chain
+pnpm chain:node
+
+# terminal 2: generate issuer key, deploy, then copy the printed addresses into .env (see .env.example)
+pnpm generate:issuer-key                          # generates and prints ISSUER_PRIVATE_KEY
+pnpm chain:deploy
+
+pnpm cli keygen                                   # holder key pair (private key stays in .zk-state/)
+pnpm cli register-issuer                          # owner registers the issuer key on-chain
+pnpm cli issue --student-number 2210001 --name "Test Student" --degree "S1 Teknik Komputer" --graduation-date 2026-08-01 --gpa 3.75
+pnpm cli challenge --verifier-id verifier-a       # prints the challenge value
+pnpm cli prove --credential-id <id> --challenge <value> --verifier-id verifier-a --threshold 3.50
+pnpm cli verify --proof .zk-state/proofs/<value>.json --verifier-id verifier-a --threshold 3.50
+```
+
+`verify` prints `{"accepted": true, ...}` (exit 0). Running it again on the same proof prints
+`CHALLENGE_ALREADY_USED` (exit 2). `pnpm cli bench --runs=30 --no-gas` runs the P6 benchmark.
+Commands are documented in [docs/command/cli.md](docs/command/cli.md).
+
 ## Scripts
 
 | Script                          | Purpose                                                          |
 | ------------------------------- | ---------------------------------------------------------------- |
 | `pnpm cli <command>`            | Run the CLI                                                      |
+| `pnpm generate:issuer-key`      | Generate a new 32-byte hex ISSUER_PRIVATE_KEY                    |
 | `pnpm test` / `pnpm test:watch` | Vitest (fast, fakes only)                                        |
-| `pnpm zk:setup`                 | Compile circuits, local trusted setup, export keys               |
-| `pnpm test:zk`                  | `zk:setup` + tests with real circuits and proofs                 |
-| `pnpm test:security`            | `zk:setup` + security tests with real Groth16 proofs             |
-| `pnpm experiment:p5`            | `zk:setup` + P5 attack-scenario experiments (generates JSON/CSV) |
+| `pnpm setup:zk`                 | Compile circuits, local trusted setup, export keys               |
+| `pnpm test:zk`                  | `setup:zk` + tests with real circuits and proofs                 |
+| `pnpm test:security`            | `setup:zk` + security tests with real Groth16 proofs             |
+| `pnpm experiment:p5`            | `setup:zk` + P5 attack-scenario experiments (generates JSON/CSV) |
 | `pnpm chain:node`               | Local Hardhat node (offline)                                     |
 | `pnpm chain:deploy`             | Deploy registry + verifier contracts to the node                 |
 | `pnpm chain:test`               | Build circuit and contracts, run contract tests                  |
+| `pnpm test:e2e`                 | Build everything, run the CLI e2e test on in-process Hardhat     |
 | `pnpm typecheck`                | `tsc --noEmit`                                                   |
 | `pnpm typecheck:contracts`      | Typecheck Hardhat config with isolated tsconfig                  |
 | `pnpm lint` / `pnpm format`     | Biome check / check with fixes                                   |

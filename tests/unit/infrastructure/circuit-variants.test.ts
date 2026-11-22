@@ -80,7 +80,7 @@ describe('createSnarkjsProofEngine', () => {
         artifactsDir: emptyDir,
       });
       await expect(creation).rejects.toBeInstanceOf(InfrastructureError);
-      await expect(creation).rejects.toThrow(/pnpm zk:setup/);
+      await expect(creation).rejects.toThrow(/pnpm setup:zk/);
     } finally {
       await rm(emptyDir, { recursive: true, force: true });
     }

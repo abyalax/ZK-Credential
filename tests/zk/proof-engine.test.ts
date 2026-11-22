@@ -18,7 +18,7 @@ import { createHarness, gpa, verifierA } from '../support/harness.js';
 
 /**
  * Real Groth16 proofs for the "threshold" circuit variant, driven through the same use cases as the
- * fake-engine tests. Needs `pnpm zk:setup` (run by `pnpm test:zk`).
+ * fake-engine tests. Needs `pnpm setup:zk` (run by `pnpm test:zk`).
  */
 
 const policy = { verifierId: verifierA, requiredGpaThreshold: gpa(300) };

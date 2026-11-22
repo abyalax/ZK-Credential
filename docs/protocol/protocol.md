@@ -151,6 +151,6 @@ threshold at least the policy requirement. A challenge is consumed only after ve
 
 ## Trust and security notes
 
-- The local ceremony in `pnpm zk:setup` has one contributor and is for research only. Groth16 needs a
+- The local ceremony in `pnpm setup:zk` has one contributor and is for research only. Groth16 needs a
   trusted setup; a real deployment needs a multi-party ceremony.
 - All data in this repository is synthetic.

@@ -13,7 +13,7 @@ pnpm install
 Build the zk-SNARK circuits, including compilation, Powers of Tau, Groth16 setup, and verifier generation.
 
 ```bash
-pnpm zk:setup
+pnpm setup:zk
 ```
 
 ## Available Commands
@@ -81,7 +81,7 @@ pnpm check
 Build zk-SNARK circuits, including compilation, Powers of Tau, Groth16 setup, and verifier generation.
 
 ```bash
-pnpm zk:setup
+pnpm setup:zk
 ```
 
 Run the ZK setup process followed by ZK-specific tests.
@@ -120,4 +120,29 @@ Build circuit and contracts, then run contract tests.
 
 ```bash
 pnpm chain:test
+```
+
+### 8. Protocol CLI (P7)
+
+Configuration comes from `.env` (see `.env.example`; `ISSUER_PRIVATE_KEY` is required). State
+(credentials, challenges, holder private key, proofs) lives in `.zk-state/` (override with
+`ZK_STATE_DIR`). It is gitignored and stored unencrypted: local research use only.
+
+| Command | Role | Flags |
+| --- | --- | --- |
+| `keygen` | holder | none. Writes `holder.json`, prints only the public key |
+| `register-issuer` | registry owner | none. Needs `REGISTRY_OWNER_PRIVATE_KEY` |
+| `issue` | issuer | `--student-number --name --degree --graduation-date --gpa [--holder-public-key]` |
+| `challenge` | verifier | `--verifier-id [--ttl-ms]` |
+| `prove` | holder | `--credential-id --challenge --verifier-id --threshold [--out]` |
+| `verify` | verifier | `--proof --verifier-id --threshold` |
+| `bench` | researcher | passes flags to the P6 harness, e.g. `--runs=30 --no-gas B4` |
+
+GPA flags are decimals (`3.75`), never the scaled integer. Exit codes: `0` success, `1` error,
+`2` proof rejected by `verify`.
+
+Run the CLI end-to-end test (real proofs, in-process Hardhat):
+
+```bash
+pnpm test:e2e
 ```

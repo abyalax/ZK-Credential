@@ -1,6 +1,6 @@
 /**
  * Deploys IssuerRegistry, Groth16Verifier and CredentialVerifier to the local node.
- * Prerequisites: `pnpm chain:node` running, and `pnpm zk:setup && pnpm chain:sync && pnpm chain:build`.
+ * Prerequisites: `pnpm chain:node` running, and `pnpm setup:zk && pnpm chain:sync && pnpm chain:build`.
  *
  * Usage: pnpm chain:deploy
  * Env:   CHAIN_RPC_URL (default http://127.0.0.1:8545)

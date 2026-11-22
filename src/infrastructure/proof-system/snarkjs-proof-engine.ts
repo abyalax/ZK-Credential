@@ -29,7 +29,7 @@ const assertArtifactsExist = (paths: CircuitArtifactPaths, variant: string): voi
   );
   if (missing.length > 0) {
     throw new InfrastructureError(
-      `Circuit artifacts for "${variant}" are missing (${missing.join(', ')}). Run \`pnpm zk:setup\` first.`,
+      `Circuit artifacts for "${variant}" are missing (${missing.join(', ')}). Run \`pnpm setup:zk\` first.`,
     );
   }
 };
@@ -106,7 +106,7 @@ const verifyProof = async (
 
 /**
  * Groth16 `ProofEngine` backed by snarkjs. Proving needs the variant's compiled circuit and
- * proving key, verifying needs its verification key; all come from `pnpm zk:setup`.
+ * proving key, verifying needs its verification key; all come from `pnpm setup:zk`.
  */
 export const createSnarkjsProofEngine = async (
   options: SnarkjsProofEngineOptions,

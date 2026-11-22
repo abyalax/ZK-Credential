@@ -24,7 +24,7 @@
 **P0.4 Setup dan artifacts**
 
 - [x] Script di `scripts/`: compile, powers of tau lokal, Groth16 setup, export verification key dan `Verifier.sol` ke `circuits/artifacts/` (gitignored)
-- [x] Satu perintah idempoten, `pnpm zk:setup`
+- [x] Satu perintah idempoten, `pnpm setup:zk`
 - [x] Dokumentasikan bahwa ptau lokal hanya untuk riset
 
 **P0.5 ProofEngine adapter (snarkjs)**
@@ -153,11 +153,11 @@
 
 ## P7 - CLI, Reproducibility, CI
 
-- [ ] Perintah CLI: `issue`, `challenge`, `prove`, `verify`, `bench`
-- [ ] README: quickstart end-to-end satu skenario demo
-- [ ] e2e test di `tests/e2e/`: CLI → chain lokal → hasil
-- [ ] GitHub Actions: `pnpm check` dan job terpisah untuk test ZK
-- [ ] Tag rilis untuk membekukan hasil eksperimen
+- [x] Perintah CLI: `issue`, `challenge`, `prove`, `verify`, `bench` (plus `keygen` dan `register-issuer`); state di `.zk-state/` lewat file store
+- [x] README: quickstart end-to-end satu skenario demo
+- [x] e2e test di `tests/e2e/` (`pnpm test:e2e`): CLI → chain lokal in-process → hasil. Belum dijalankan di sandbox karena `setup:zk` melewati batas waktu; jalankan di mesin biasa
+- [x] GitHub Actions (`.github/workflows/ci.yml`): `pnpm check` dan job terpisah untuk test ZK
+- [ ] Tag rilis untuk membekukan hasil eksperimen (manual: `git tag -a v0.1.0-results -m "P5/P6 results" && git push origin v0.1.0-results`)
 
 ## P8 - Dokumentasi dan Skripsi
 

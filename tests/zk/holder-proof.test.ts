@@ -21,7 +21,7 @@ import {
 import { InfrastructureError } from '../../src/shared/index.js';
 
 /**
- * Real Groth16 proofs for the "holder" circuit variant (P2). Needs `pnpm zk:setup` (run by
+ * Real Groth16 proofs for the "holder" circuit variant (P2). Needs `pnpm setup:zk` (run by
  * `pnpm test:zk`). Keys are deterministic so a failure is reproducible.
  */
 

@@ -18,7 +18,7 @@ export interface GasReport {
 /**
  * Gas is only defined for B4: it is the only variant with an on-chain verifier
  * (`CredentialVerifier`). The challenge check stays off-chain and costs no gas. Needs
- * `pnpm zk:setup full`, `pnpm chain:sync` and `pnpm chain:build` first.
+ * `pnpm setup:zk full`, `pnpm chain:sync` and `pnpm chain:build` first.
  */
 export const measureProposedModelGas = async (): Promise<GasReport> => {
   try {

@@ -2,7 +2,7 @@
  * Builds every circuit variant: compile (circom2) -> powers of tau -> Groth16 setup ->
  * verification key + Solidity verifier. Output goes to circuits/artifacts/ (gitignored).
  *
- * Usage: pnpm zk:setup [--force] [variant ...]
+ * Usage: pnpm setup:zk [--force] [variant ...]
  *
  * SECURITY: the ceremony below has a single, locally generated contribution. It is fine for
  * research and testing, and must never be used to protect real credentials.
@@ -56,7 +56,7 @@ const listCircomFiles = async (dir: string): Promise<string[]> => {
 /**
  * Files are read in parallel but hashed in their sorted order. Hashing inside the parallel reads
  * made the digest depend on which read finished first, so it changed between runs and every
- * `pnpm zk:setup` rebuilt all variants.
+ * `pnpm setup:zk` rebuilt all variants.
  */
 const hashSources = async (): Promise<string> => {
   const files = await listCircomFiles(CIRCUITS_SRC);
@@ -125,7 +125,7 @@ const compile = (variant: string): void => {
   }
   if (GENERATE_WASM && !existsSync(join(VARIANTS_DIR, `${variant}_js`, `${variant}.wasm`))) {
     throw new Error(
-      `Circuit "${variant}" has no WASM witness generator. Install native Circom (recommended on Windows) and rerun pnpm zk:setup.`,
+      `Circuit "${variant}" has no WASM witness generator. Install native Circom (recommended on Windows) and rerun pnpm setup:zk.`,
     );
   }
 };

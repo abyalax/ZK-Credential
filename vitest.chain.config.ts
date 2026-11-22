@@ -2,7 +2,7 @@ import { defineConfig } from 'vitest/config';
 
 /**
  * Contract tests on the in-process Hardhat network (P4.3). They need built circuits plus compiled
- * contracts: `pnpm test:chain` runs `zk:setup`, `chain:sync` and `chain:build` first.
+ * contracts: `pnpm test:chain` runs `setup:zk`, `chain:sync` and `chain:build` first.
  */
 export default defineConfig({
   test: {
