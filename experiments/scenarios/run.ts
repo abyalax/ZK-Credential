@@ -77,10 +77,7 @@ const main = async (): Promise<void> => {
     results,
   };
   await Promise.all([
-    writeFile(
-      join(resultsDir, 'p5-attack-scenarios.json'),
-      `${JSON.stringify(report, null, 2)}\n`,
-    ),
+    writeFile(join(resultsDir, 'p5-attack-scenarios.json'), `${JSON.stringify(report, null, 2)}\n`),
     writeFile(join(resultsDir, 'p5-attack-scenarios.csv'), resultsToCsv(results)),
     writeFile(join(resultsDir, 'p5-summary.csv'), summaryToCsv(summary)),
   ]);

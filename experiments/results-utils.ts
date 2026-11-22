@@ -44,9 +44,7 @@ export const resolveScenariosPath = (repositoryRoot: string, timestamp: string):
  * Finds the latest timestamp folder in the results directory.
  * Returns undefined if no timestamp folders exist.
  */
-export const findLatestTimestamp = async (
-  repositoryRoot: string,
-): Promise<string | undefined> => {
+export const findLatestTimestamp = async (repositoryRoot: string): Promise<string | undefined> => {
   const resultsDir = join(repositoryRoot, 'experiments', 'results');
   try {
     const entries = await readdir(resultsDir, { withFileTypes: true });

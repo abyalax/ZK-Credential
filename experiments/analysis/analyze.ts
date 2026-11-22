@@ -351,7 +351,9 @@ const main = async (): Promise<void> => {
   await writeBenchmarkResults(report, fileArg, timestampArg);
 
   const suffix = report.mode === 'no-gas' ? '-nogas' : '';
-  const pathSuffix = timestampArg ? `/${timestampArg}/${report.mode === 'no-gas' ? 'no-gas' : 'gas'}` : '';
+  const pathSuffix = timestampArg
+    ? `/${timestampArg}/${report.mode === 'no-gas' ? 'no-gas' : 'gas'}`
+    : '';
   process.stdout.write(
     `wrote experiments/results${pathSuffix}/p6-table${suffix}.md, p6-overhead${suffix}.csv, p6-*${suffix}.svg\n`,
   );
