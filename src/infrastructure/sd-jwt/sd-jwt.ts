@@ -111,7 +111,7 @@ export const issueSdJwt = (input: IssueSdJwtInput): string => {
     iat: input.issuedAt,
     vct: 'AcademicDiploma',
     _sd_alg: SD_ALG,
-    _sd: disclosures.map(sha256).sort(),
+    _sd: disclosures.map(sha256).sort((a, b) => a.localeCompare(b)),
     cnf: { jwk: publicKeyToJwk(input.holderPublicKey) },
   };
   const jwt = signJwt({ alg: 'EdDSA', typ: ISSUER_JWT_TYP }, payload, input.issuerPrivateKey);

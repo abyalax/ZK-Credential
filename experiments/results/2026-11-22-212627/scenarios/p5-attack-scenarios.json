@@ -54,11 +54,7 @@
       "attackTotal": 22,
       "attackRejected": 19,
       "attackRejectionRate": 0.8636,
-      "openAttacks": [
-        "replay-relabelled-challenge",
-        "relay-to-other-verifier",
-        "claims-challenge-out-of-field"
-      ],
+      "openAttacks": ["replay-relabelled-challenge", "relay-to-other-verifier", "claims-challenge-out-of-field"],
       "unexpected": []
     },
     {

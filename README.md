@@ -47,7 +47,6 @@ pnpm cli prove --credential-id <id> --challenge <value> --verifier-id verifier-a
 pnpm cli verify --proof .zk-state/proofs/<value>.json --verifier-id verifier-a --threshold 3.50
 ```
 
-
 `verify` prints `{"accepted": true, ...}` (exit 0). Running it again on the same proof prints
 `CHALLENGE_ALREADY_USED` (exit 2). `pnpm cli bench --runs=30 --no-gas` runs the P6 benchmark.
 Commands are documented in [docs/command/cli.md](docs/command/cli.md).
@@ -77,3 +76,59 @@ Commands are documented in [docs/command/cli.md](docs/command/cli.md).
 See [docs/architecture/overview.md](docs/architecture/overview.md). The protocol and encodings are in
 [docs/protocol/protocol.md](docs/protocol/protocol.md), toolchain notes in
 [docs/protocol/toolchain.md](docs/protocol/toolchain.md), and the plan in [TODO.md](TODO.md).
+
+## Static Analysis (SonarQube Cloud)
+
+Analisis kualitas kode dan keamanan memakai [SonarScanner CLI](https://docs.sonarsource.com/sonarqube-cloud/advanced-setup/ci-based-analysis/sonarscanner-cli/) yang mengirim hasil ke SonarQube Cloud (region EU).
+
+### Prasyarat
+
+1. SonarScanner CLI terpasang dan folder `bin`-nya ada di `PATH`. Cek dengan `sonar-scanner --version`.
+2. Project sudah dibuat di SonarQube Cloud (_+ → Analyze new project_). Untuk mode sebagian, buat juga project `<project-key>-partial`.
+3. Token dibuat di https://sonarcloud.io/account/security.
+4. Salin `.env.example` menjadi `.env` lalu isi nilainya.
+
+```env
+SONAR_TOKEN=
+SONAR_ORGANIZATION=
+SONAR_PROJECT_KEY=
+```
+
+Skrip membaca `.env` secara otomatis. Variabel yang sudah ada di environment tidak ditimpa. File `.env` tidak boleh di-commit.
+
+### Menjalankan
+
+```powershell
+.\scripts\sonar-scan.ps1                          # seluruh codebase
+.\scripts\sonar-scan.ps1 -Mode Changed            # file berubah vs HEAD (termasuk untracked)
+.\scripts\sonar-scan.ps1 -Mode Changed -BaseRef main
+.\scripts\sonar-scan.ps1 -Mode Staged             # hanya file staged
+.\scripts\sonar-scan.ps1 -Mode Folder -Path .\src\circuits
+```
+
+| Mode      | Cakupan                    | Project key                 |
+| --------- | -------------------------- | --------------------------- |
+| `Full`    | Seluruh `*.ts` dan `*.tsx` | `SONAR_PROJECT_KEY`         |
+| `Changed` | File berubah vs `-BaseRef` | `SONAR_PROJECT_KEY-partial` |
+| `Staged`  | File di staging area       | `SONAR_PROJECT_KEY-partial` |
+| `Folder`  | Satu folder                | `SONAR_PROJECT_KEY-partial` |
+
+Mode sebagian memakai project terpisah agar dashboard utama tidak menganggap file lain terhapus.
+
+### Parameter
+
+| Parameter       | Default                 | Keterangan                                 |
+| --------------- | ----------------------- | ------------------------------------------ |
+| `-Mode`         | `Full`                  | `Full`, `Changed`, `Staged`, atau `Folder` |
+| `-Path`         | `.`                     | Folder target (mode `Folder`)              |
+| `-BaseRef`      | `HEAD`                  | Pembanding git (mode `Changed`)            |
+| `-ProjectKey`   | `SONAR_PROJECT_KEY`     | Project key di SonarQube Cloud             |
+| `-Organization` | `SONAR_ORGANIZATION`    | Organization key                           |
+| `-HostUrl`      | `https://sonarcloud.io` | URL server                                 |
+| `-Extensions`   | `ts`, `tsx`             | Ekstensi yang dianalisis                   |
+
+### Catatan
+
+- Hasil lengkap (issue, quality gate, duplikasi) dilihat di dashboard https://sonarcloud.io.
+- Folder `.scannerwork/` dihasilkan scanner dan sudah masuk `.gitignore`.
+- Cek cepat satu file tanpa server: `sonar analyze --file <path>`.

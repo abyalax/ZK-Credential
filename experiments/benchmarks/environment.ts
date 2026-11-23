@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
-import { arch, cpus, platform, release, totalmem } from 'node:os';
-import { join } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import { arch, cpus, homedir, platform, release, totalmem } from 'node:os';
+import path, { join } from 'node:path';
 import { REPOSITORY_ROOT } from '../../src/infrastructure/index.js';
 
 const TOOLS = ['snarkjs', 'circomlibjs', 'circomlib', 'circom2', 'hardhat', 'viem', 'tsx'] as const;
@@ -17,9 +17,22 @@ const packageVersion = (name: string): string => {
   }
 };
 
+const circomCandidates = (): string[] => {
+  const exe = process.platform === 'win32' ? 'circom.exe' : 'circom';
+  return [
+    process.env.CIRCOM_PATH, // override eksplisit
+    path.join(homedir(), '.cargo', 'bin', exe), // result of `cargo install`
+    path.join(process.cwd(), 'node_modules', '.bin', exe),
+  ].filter((p): p is string => Boolean(p));
+};
+
+const resolveCircom = (): string | null => circomCandidates().find((p) => path.isAbsolute(p) && existsSync(p)) ?? null;
+
 const nativeCircomVersion = (): string => {
+  const bin = resolveCircom();
+  if (!bin) return 'not installed (circom2 WASM compiler used)';
   try {
-    return execFileSync('circom', ['--version'], { encoding: 'utf8' }).trim();
+    return execFileSync(bin, ['--version'], { encoding: 'utf8' }).trim();
   } catch {
     return 'not installed (circom2 WASM compiler used)';
   }

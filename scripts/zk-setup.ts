@@ -28,6 +28,7 @@ const VARIANTS_DIR = join(CIRCUITS_SRC, 'variants');
 const MIN_PTAU_POWER = 8;
 const NATIVE_CIRCOM = (() => {
   try {
+    // NOSONAR: legitimate use of PATH resolution for development tool detection
     execFileSync('circom', ['--version'], { stdio: 'ignore' });
     return 'circom';
   } catch {}
