@@ -20,6 +20,7 @@ export interface WorkerResult {
   payloadBytes: number;
   rssBeforeSetupMb: number;
   peakRssMb: number;
+  issueMs: number[];
   proveMs: number[];
   verifyMs: number[];
 }
@@ -28,12 +29,15 @@ export const runWorker = async (id: string, runs: number, warmup: number): Promi
   const configuration = findConfiguration(id);
   const rssBeforeSetupMb = toMb(process.memoryUsage().rss);
   const runner = await createRunner(configuration);
+  const issueMs: number[] = [];
   const proveMs: number[] = [];
   const verifyMs: number[] = [];
   let sizes = { proofBytes: 0, payloadBytes: 0 };
 
   try {
     for (let index = 0; index < warmup + runs; index++) {
+      const issueStart = performance.now();
+      await runner.issue();
       const proveStart = performance.now();
       const presentation = await runner.prove();
       const verifyStart = performance.now();
@@ -42,6 +46,7 @@ export const runWorker = async (id: string, runs: number, warmup: number): Promi
       if (!accepted) throw new Error(`Configuration ${id} rejected its own honest presentation`);
       sizes = { proofBytes: presentation.proofBytes, payloadBytes: presentation.payloadBytes };
       if (index < warmup) continue;
+      issueMs.push(proveStart - issueStart);
       proveMs.push(verifyStart - proveStart);
       verifyMs.push(verifyEnd - verifyStart);
     }
@@ -57,6 +62,7 @@ export const runWorker = async (id: string, runs: number, warmup: number): Promi
     ...sizes,
     rssBeforeSetupMb,
     peakRssMb: toMb(process.resourceUsage().maxRSS * 1024),
+    issueMs,
     proveMs,
     verifyMs,
   };

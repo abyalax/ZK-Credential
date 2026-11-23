@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { buildEddsa, buildPoseidon } from 'circomlibjs';
 import * as snarkjs from 'snarkjs';
 import type { Credential, SignedCredential } from '../../src/domain/index.js';
@@ -6,6 +7,12 @@ import { credentialCommitmentInputs } from '../../src/infrastructure/cryptograph
 import { parseIssuerPublicKey, parseIssuerSignature } from '../../src/infrastructure/cryptography/eddsa-credential-signer.js';
 import { circuitArtifactPaths } from '../../src/infrastructure/proof-system/artifact-paths.js';
 import type { PayloadContent } from '../../src/infrastructure/proof-system/proof-payload.js';
+import {
+  generateSdJwtKeyPair,
+  issueSdJwt,
+  presentSdJwt,
+  verifySdJwtPresentation,
+} from '../../src/infrastructure/sd-jwt/index.js';
 import { gpa, verifierA } from '../../tests/support/harness.js';
 import { createParties, createScenarioContext, makeSignCredential } from '../scenarios/context.js';
 import type { Configuration } from './index.js';
@@ -22,6 +29,8 @@ export interface Presentation {
 export interface Runner {
   /** R1CS constraints; `undefined` for the baseline, which has no circuit. */
   readonly constraints: number | undefined;
+  /** Issuer side: produces one signed credential. Measured separately from presentation. */
+  readonly issue: () => Promise<void>;
   readonly prove: () => Promise<Presentation>;
   readonly verify: (presentation: Presentation) => Promise<boolean>;
   readonly close: () => Promise<void>;
@@ -39,6 +48,9 @@ const createZkRunner = async (circuit: NonNullable<Configuration['circuit']>): P
 
   return {
     constraints: info.nConstraints,
+    issue: async () => {
+      await ctx.signCredential();
+    },
     async prove() {
       const proof = await ctx.engine.generate({
         signedCredential,
@@ -73,6 +85,9 @@ const createBaselineRunner = async (): Promise<Runner> => {
 
   return {
     constraints: undefined,
+    issue: async () => {
+      await makeSignCredential(parties)();
+    },
     async prove() {
       const payload = JSON.stringify({
         credential: signed.credential,
@@ -97,5 +112,78 @@ const createBaselineRunner = async (): Promise<Runner> => {
   };
 };
 
+const SD_ISSUER = 'issuer-p6';
+
+/**
+ * Configuration SD (D8, D9): SD-JWT with key binding. The holder reveals the GPA claim only, so the
+ * verifier learns the exact GPA (not just "GPA >= threshold") and applies the policy in the clear.
+ * `proofBytes` counts the issuer signature plus the key-binding JWT.
+ */
+const createSdJwtRunner = async (): Promise<Runner> => {
+  const issuerKeys = generateSdJwtKeyPair();
+  const holderKeys = generateSdJwtKeyPair();
+  const trustedIssuers = new Map([[SD_ISSUER, issuerKeys.publicKey]]);
+  const claims = {
+    id: 'p6-credential',
+    studentNumber: '2210001',
+    fullName: 'P6 Test Student',
+    degree: 'S.Kom.',
+    graduationDate: '2026-08-20',
+    gpa: 375,
+    issuedAt: 1_700_000_000_000,
+  };
+  const issueOnce = () =>
+    issueSdJwt({
+      issuer: SD_ISSUER,
+      issuerPrivateKey: issuerKeys.privateKey,
+      holderPublicKey: holderKeys.publicKey,
+      claims,
+      issuedAt: 1_700_000_000,
+    });
+  const sdJwt = issueOnce();
+
+  return {
+    constraints: undefined,
+    issue: async () => {
+      issueOnce();
+    },
+    async prove() {
+      const presentation = presentSdJwt({
+        sdJwt,
+        disclose: ['gpa'],
+        holderPrivateKey: holderKeys.privateKey,
+        nonce: randomBytes(31).toString('hex'),
+        audience: verifierA,
+        issuedAt: 1_700_000_100,
+      });
+      const parts = presentation.split('~');
+      const issuerSignature = (parts[0] ?? '').split('.')[2] ?? '';
+      return {
+        proofBytes: byteLength(issuerSignature) + byteLength(parts.at(-1) ?? ''),
+        payloadBytes: byteLength(presentation),
+        data: presentation,
+      };
+    },
+    async verify({ data }) {
+      const presentation = data as string;
+      const keyBinding = JSON.parse(Buffer.from(presentation.split('~').at(-1)?.split('.')[1] ?? '', 'base64url').toString()) as {
+        nonce: string;
+      };
+      const result = verifySdJwtPresentation({
+        presentation,
+        trustedIssuers,
+        expectedAudience: verifierA,
+        expectedNonce: keyBinding.nonce,
+      });
+      return result.ok && Number(result.value.disclosed.gpa) >= REQUIRED_THRESHOLD;
+    },
+    close: async () => {},
+  };
+};
+
 export const createRunner = async (configuration: Configuration): Promise<Runner> =>
-  configuration.circuit ? createZkRunner(configuration.circuit) : createBaselineRunner();
+  configuration.id === 'SD'
+    ? createSdJwtRunner()
+    : configuration.circuit
+      ? createZkRunner(configuration.circuit)
+      : createBaselineRunner();

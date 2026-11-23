@@ -86,6 +86,8 @@ const overheadRows = (rows: readonly Row[]) => {
     ['B3', 'B4'],
     ['B1', 'B4'],
     ['A', 'B4'],
+    ['A', 'SD'],
+    ['SD', 'B4'],
   ];
   return pairs.flatMap(([from, to]) => {
     const a = byId.get(from);

@@ -2,7 +2,7 @@
  * P6.2: benchmark harness. Runs every configuration in its own process (warm-up + N measured
  * repetitions, default 5 + 30) and writes structured results to experiments/results/.
  *
- * Usage: pnpm experiment:p6 [--runs=30] [--warmup=5] [--no-gas] [A B1 B2 B3 B4]
+ * Usage: pnpm experiment:p6 [--runs=30] [--warmup=5] [--no-gas] [A B1 B2 B3 B4 SD]
  */
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -87,6 +87,8 @@ const buildSummary = (results: WorkerResult[], gas: GasReport) => {
       payloadBytes: result.payloadBytes,
       peakRssMb: result.peakRssMb,
       rssBeforeSetupMb: result.rssBeforeSetupMb,
+      attributesRevealed: configuration.attributesRevealed,
+      issue: summarize(result.issueMs),
       prove: summarize(result.proveMs),
       verify: summarize(result.verifyMs),
       gas: configuration.id === 'B4' ? gas.verifyCredentialGas : null,
@@ -146,6 +148,9 @@ const writeBenchmarkResults = async (
           'verify_median_ms',
           'verify_std_ms',
           'gas',
+          'issue_mean_ms',
+          'issue_median_ms',
+          'attributes_revealed',
         ],
         summary.map((row) => [
           row.configuration,
@@ -160,17 +165,21 @@ const writeBenchmarkResults = async (
           round(row.verify.median),
           round(row.verify.std),
           row.gas ?? '',
+          round(row.issue.mean),
+          round(row.issue.median),
+          row.attributesRevealed,
         ]),
       ),
     ),
     writeFile(
       join(resultsDir, `p6-benchmark-raw${suffix}.csv`),
       csv(
-        ['configuration', 'run', 'prove_ms', 'verify_ms'],
+        ['configuration', 'run', 'issue_ms', 'prove_ms', 'verify_ms'],
         results.flatMap((result) =>
           result.proveMs.map((prove, index) => [
             result.configuration,
             index + 1,
+            round(result.issueMs[index] ?? 0),
             round(prove),
             round(result.verifyMs[index] ?? 0),
           ]),

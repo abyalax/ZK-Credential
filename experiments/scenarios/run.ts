@@ -11,17 +11,49 @@ import { generateTimestamp, resolveScenariosPath } from '../results-utils.js';
 import { SCENARIOS } from './catalog.js';
 import { createScenarioContext } from './context.js';
 import { resultsToCsv, summarize, summaryToCsv } from './metrics.js';
-import { expectedAcceptance, type ScenarioResult, VARIANT_NAMES, type VariantName } from './types.js';
+import { createSdWorld, SD_NOT_APPLICABLE, SD_SCENARIOS } from './sd-jwt.js';
+import {
+  expectedAcceptance,
+  SCENARIO_CONFIGURATIONS,
+  type ScenarioConfiguration,
+  type ScenarioResult,
+  type VariantName,
+} from './types.js';
 
 const log = (message: string): void => {
   process.stdout.write(`${message}\n`);
 };
 
-const parseVariants = (args: readonly string[]): readonly VariantName[] => {
-  if (args.length === 0) return VARIANT_NAMES;
-  const unknown = args.filter((arg) => !(VARIANT_NAMES as readonly string[]).includes(arg));
-  if (unknown.length > 0) throw new Error(`Unknown variant(s): ${unknown.join(', ')}`);
-  return args as VariantName[];
+const parseVariants = (args: readonly string[]): readonly ScenarioConfiguration[] => {
+  if (args.length === 0) return SCENARIO_CONFIGURATIONS;
+  const unknown = args.filter((arg) => !(SCENARIO_CONFIGURATIONS as readonly string[]).includes(arg));
+  if (unknown.length > 0) throw new Error(`Unknown configuration(s): ${unknown.join(', ')}`);
+  return args as ScenarioConfiguration[];
+};
+
+/** SD-JWT baseline (D9): same ids as the catalog where an equivalent attack exists. */
+const runSdJwt = async (): Promise<ScenarioResult[]> => {
+  const world = createSdWorld();
+  const categoryOf = new Map(SCENARIOS.map((scenario) => [scenario.id, scenario.category]));
+  const results: ScenarioResult[] = [];
+  for (const scenario of SD_SCENARIOS) {
+    const started = performance.now();
+    const outcome = await scenario.run(world);
+    const durationMs = Math.round(performance.now() - started);
+    results.push({
+      configuration: 'SD',
+      scenarioId: scenario.id,
+      kind: scenario.kind,
+      category: categoryOf.get(scenario.id) ?? 'baseline',
+      expectedAccepted: scenario.kind === 'honest',
+      accepted: outcome.accepted,
+      stage: outcome.stage,
+      reason: outcome.reason,
+      durationMs,
+    });
+    log(`[SD] ${scenario.id}: ${outcome.reason} (${durationMs} ms)`);
+  }
+  return results;
 };
 
 const runVariant = async (variant: VariantName): Promise<ScenarioResult[]> => {
@@ -54,7 +86,9 @@ const runVariant = async (variant: VariantName): Promise<ScenarioResult[]> => {
 const main = async (): Promise<void> => {
   const variants = parseVariants(process.argv.slice(2));
   const results: ScenarioResult[] = [];
-  for (const variant of variants) results.push(...(await runVariant(variant)));
+  for (const variant of variants) {
+    results.push(...(variant === 'SD' ? await runSdJwt() : await runVariant(variant)));
+  }
 
   const summary = summarize(results);
 
@@ -67,6 +101,7 @@ const main = async (): Promise<void> => {
     generatedAt: new Date().toISOString(),
     environment: { node: process.version, platform: process.platform, arch: process.arch },
     summary,
+    sdJwtNotApplicable: SD_NOT_APPLICABLE,
     results,
   };
   await Promise.all([

@@ -171,18 +171,18 @@ Infrastruktur (API, database, frontend) tidak dibutuhkan untuk klaim riset. Caku
 
 Prioritas tinggi:
 
-- [ ] Selaraskan RQ1-RQ3 dengan teks proposal, lalu isi nomor RQ di kolom pertama `docs/research/rq-evidence.md`
-- [ ] Baseline SD-JWT (D8, D9): belum ada di repo (`experiments/configurations/` hanya memuat A-B4). Implementasikan sebagai konfigurasi pembanding, masukkan ke P5 (skenario serangan yang berlaku) dan P6 (waktu issue, present, verify; ukuran payload)
-- [ ] Tulis batasan antarmuka di Bab 1: sistem berupa CLI dan test suite, tanpa API, database, atau frontend; sebut bahwa React/Next.js di proposal awal tidak dikerjakan (D4)
-- [ ] Tulis Bab 4 pembahasan: interpretasi ablation B1 -> B4, trade-off privasi vs biaya (A vs B4), dan perbandingan dengan DIAR, ZKBAR-V, Cross-border Candidate Credential Verification, VeriZKP
-- [ ] Tulis klaim kontribusi dan batasan di Bab 1 dan Bab 5 sesuai rencana v1.5 (integrasi tiga mekanisme dalam satu circuit, evaluasi ablation dan serangan sistematis; revocation di luar cakupan, D7)
+- [x] Selaraskan RQ1-RQ5 dengan Bagian 4 rencana v1.5, lalu isi nomor RQ di kolom pertama `docs/research/rq-evidence.md` (plus pemetaan label konfigurasi rencana vs repositori)
+- [x] Baseline SD-JWT (D8, D9): modul `src/infrastructure/sd-jwt/`, konfigurasi `SD` di `experiments/configurations/`, P5 di `experiments/scenarios/sd-jwt.ts` (16 serangan, 7 tidak berlaku) dan P6 (waktu issue, prove/present, verify; ukuran payload). Waktu SD pada mesin penulis perlu run `pnpm experiment:p6:nogas`
+- [x] Tulis batasan antarmuka di Bab 1 (`docs/research/bab-1-5-kontribusi-batasan.md`): sistem berupa CLI dan test suite, tanpa API, database, atau frontend; sebut bahwa React/Next.js di proposal awal tidak dikerjakan (D4)
+- [x] Tulis Bab 4 pembahasan (`docs/research/bab-4-pembahasan.md`; perbandingan dengan DIAR, ZKBAR-V, Cross-border, VeriZKP masih kerangka karena PDF belum dibaca): interpretasi ablation B1 -> B4, trade-off privasi vs biaya (A vs B4), dan perbandingan dengan DIAR, ZKBAR-V, Cross-border Candidate Credential Verification, VeriZKP
+- [x] Tulis klaim kontribusi dan batasan di Bab 1 dan Bab 5 (`docs/research/bab-1-5-kontribusi-batasan.md`) sesuai rencana v1.5 (integrasi tiga mekanisme dalam satu circuit, evaluasi ablation dan serangan sistematis; revocation di luar cakupan, D7)
 
 Prioritas sedang:
 
 - [ ] Ulang P6 pada mesin idle (tutup aplikasi lain, daya tersambung) dan laporkan median; std B3 dan B4 besar sehingga selisih B2 -> B3 -> B4 tidak bisa dibaca sebagai biaya per mekanisme
-- [ ] Tambahkan ke `threats-to-validity.md`: katalog 22 serangan disusun penulis dan tidak menjamin kelengkapan (bukan bukti formal), serta hasil P5 hanya berlaku pada katalog itu
-- [ ] Tambahkan ke `threats-to-validity.md`: attack rejection rate B1-B3 ditentukan oleh `openIn` di katalog; jelaskan bahwa test `attack-scenarios.test.ts` memastikan hasil nyata sama dengan katalog
-- [ ] Pertimbangkan ceremony ptau multi-kontributor (atau jelaskan sebagai batasan) agar klaim kunci tidak bisa dipertanyakan
+- [x] Tambahkan ke `threats-to-validity.md`: katalog 22 serangan disusun penulis dan tidak menjamin kelengkapan (bukan bukti formal), serta hasil P5 hanya berlaku pada katalog itu
+- [x] Tambahkan ke `threats-to-validity.md`: attack rejection rate B1-B3 ditentukan oleh `openIn` di katalog; jelaskan bahwa test `attack-scenarios.test.ts` memastikan hasil nyata sama dengan katalog
+- [x] Pertimbangkan ceremony ptau multi-kontributor (dijelaskan sebagai batasan di `threats-to-validity.md`) agar klaim kunci tidak bisa dipertanyakan
 - [ ] Tag rilis untuk membekukan hasil eksperimen (lihat item terbuka di P7)
 
 Kondisional (hanya bila dosen atau penguji meminta demo):

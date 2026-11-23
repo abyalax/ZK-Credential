@@ -1,7 +1,7 @@
-import { type ScenarioResult, VARIANT_NAMES, type VariantName } from './types.js';
+import { SCENARIO_CONFIGURATIONS, type ScenarioConfiguration, type ScenarioResult } from './types.js';
 
 export interface ConfigurationSummary {
-  readonly configuration: VariantName;
+  readonly configuration: ScenarioConfiguration;
   readonly honestTotal: number;
   readonly honestAccepted: number;
   /** Accepted honest presentations / honest presentations. */
@@ -19,7 +19,7 @@ export interface ConfigurationSummary {
 const ratio = (part: number, total: number): number => (total === 0 ? 0 : Math.round((part / total) * 10_000) / 10_000);
 
 export const summarize = (results: readonly ScenarioResult[]): ConfigurationSummary[] =>
-  VARIANT_NAMES.map((configuration) => {
+  SCENARIO_CONFIGURATIONS.map((configuration) => {
     const rows = results.filter((row) => row.configuration === configuration);
     const honest = rows.filter((row) => row.kind === 'honest');
     const attacks = rows.filter((row) => row.kind === 'attack');

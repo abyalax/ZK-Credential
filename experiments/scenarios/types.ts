@@ -4,6 +4,10 @@ import type { ScenarioContext } from './context.js';
 export const VARIANT_NAMES = ['threshold', 'issuer', 'holder', 'full'] as const;
 export type VariantName = (typeof VARIANT_NAMES)[number];
 
+/** Scenario configurations: the four circuit variants plus the SD-JWT baseline (D9). */
+export const SCENARIO_CONFIGURATIONS = [...VARIANT_NAMES, 'SD'] as const;
+export type ScenarioConfiguration = (typeof SCENARIO_CONFIGURATIONS)[number];
+
 export type ScenarioKind = 'honest' | 'attack';
 
 export type ScenarioCategory = 'baseline' | 'threshold' | 'issuer' | 'holder' | 'replay' | 'malformed';
@@ -41,7 +45,7 @@ export const expectedAcceptance = (scenario: Scenario, variant: VariantName): bo
   scenario.kind === 'honest' || scenario.openIn.includes(variant);
 
 export interface ScenarioResult {
-  readonly configuration: VariantName;
+  readonly configuration: ScenarioConfiguration;
   readonly scenarioId: string;
   readonly kind: ScenarioKind;
   readonly category: ScenarioCategory;

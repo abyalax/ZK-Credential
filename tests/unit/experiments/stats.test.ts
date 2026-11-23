@@ -20,9 +20,10 @@ describe('benchmark statistics', () => {
 });
 
 describe('P6 configurations', () => {
-  it('covers baseline A and one circuit variant per ablation step, in order', () => {
+  it('covers baseline A, one circuit variant per ablation step, then the SD-JWT baseline', () => {
     expect(CONFIGURATIONS.map((configuration) => configuration.id)).toEqual([...CONFIGURATION_IDS]);
-    expect(CONFIGURATIONS.map((configuration) => configuration.circuit)).toEqual([undefined, ...VARIANT_NAMES]);
+    expect(CONFIGURATIONS.map((configuration) => configuration.circuit)).toEqual([undefined, ...VARIANT_NAMES, undefined]);
+    expect(CONFIGURATIONS.at(-1)?.id).toBe('SD');
   });
 
   it('adds guarantees monotonically along B1 -> B4', () => {
