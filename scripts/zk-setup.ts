@@ -27,11 +27,20 @@ const VARIANTS_DIR = join(CIRCUITS_SRC, 'variants');
 /** Smallest ptau worth generating; small circuits all share it. */
 const MIN_PTAU_POWER = 8;
 const NATIVE_CIRCOM = (() => {
-  try {
-    // NOSONAR: legitimate use of PATH resolution for development tool detection
-    execFileSync('circom', ['--version'], { stdio: 'ignore' });
-    return 'circom';
-  } catch {}
+  const exe = process.platform === 'win32' ? 'circom.exe' : 'circom';
+  const candidates = [
+    process.env.CIRCOM_PATH,
+    join(REPOSITORY_ROOT, 'node_modules', '.bin', exe),
+  ].filter((p): p is string => Boolean(p));
+
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) {
+      try {
+        execFileSync(candidate, ['--version'], { stdio: 'ignore' });
+        return candidate;
+      } catch {}
+    }
+  }
 })();
 // circom2 (the WASM compiler) cannot emit a witness generator on Windows, but native Circom can.
 const GENERATE_WASM = process.platform !== 'win32' || NATIVE_CIRCOM !== undefined;

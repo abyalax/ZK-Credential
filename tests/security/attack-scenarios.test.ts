@@ -41,7 +41,7 @@ describe.each(VARIANT_NAMES)('attack scenarios on the "%s" circuit variant', (va
       (scenario) => scenario.id,
     );
 
-    expect(open.sort()).toEqual(listed.sort());
+    expect(open.sort((a, b) => a.localeCompare(b))).toEqual(listed.sort((a, b) => a.localeCompare(b)));
     if (variant === 'full') expect(open).toEqual([]);
   });
 });
