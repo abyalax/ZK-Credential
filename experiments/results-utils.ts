@@ -47,7 +47,7 @@ export const findLatestTimestamp = async (repositoryRoot: string): Promise<strin
     const timestampFolders = entries
       .filter((entry) => entry.isDirectory() && /^\d{4}-\d{2}-\d{2}-\d{6}$/.test(entry.name))
       .map((entry) => entry.name)
-      .sort((a, b)=> a.localeCompare(b))
+      .sort((a, b) => a.localeCompare(b))
       .reverse();
     return timestampFolders[0];
   } catch {

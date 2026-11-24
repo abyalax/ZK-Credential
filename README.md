@@ -77,58 +77,144 @@ See [docs/architecture/overview.md](docs/architecture/overview.md). The protocol
 [docs/protocol/protocol.md](docs/protocol/protocol.md), toolchain notes in
 [docs/protocol/toolchain.md](docs/protocol/toolchain.md), and the plan in [TODO.md](TODO.md).
 
-## Static Analysis (SonarQube Cloud)
 
-Analisis kualitas kode dan keamanan memakai [SonarScanner CLI](https://docs.sonarsource.com/sonarqube-cloud/advanced-setup/ci-based-analysis/sonarscanner-cli/) yang mengirim hasil ke SonarQube Cloud (region EU).
+## SonarQube Scanner
 
-### Prasyarat
+The project includes a local SonarQube scanner script that runs analysis in an ephemeral Docker container without requiring a SonarCloud account.
 
-1. SonarScanner CLI terpasang dan folder `bin`-nya ada di `PATH`. Cek dengan `sonar-scanner --version`.
-2. Project sudah dibuat di SonarQube Cloud (_+ → Analyze new project_). Untuk mode sebagian, buat juga project `<project-key>-partial`.
-3. Token dibuat di https://sonarcloud.io/account/security.
-4. Salin `.env.example` menjadi `.env` lalu isi nilainya.
+### Prerequisites
 
-```env
-SONAR_TOKEN=
-SONAR_ORGANIZATION=
-SONAR_PROJECT_KEY=
-```
+- **Docker**: Required for running the SonarQube server. The script uses WSL Docker on Windows.
+- **WSL2**: Required for Docker integration on Windows.
+- **sonar-scanner CLI**: Must be installed and available in PATH.
+  - Install via npm: `npm install -g sonar-scanner`
+- **Kernel configuration**: The script automatically configures required WSL kernel settings (`vm.max_map_count`, `fs.file-max`).
 
-Skrip membaca `.env` secara otomatis. Variabel yang sudah ada di environment tidak ditimpa. File `.env` tidak boleh di-commit.
+### Usage
 
-### Menjalankan
+```Shell
+# Full project analysis
+.\scripts\sonar-scan.ps1
 
-```powershell
-.\scripts\sonar-scan.ps1                          # seluruh codebase
-.\scripts\sonar-scan.ps1 -Mode Changed            # file berubah vs HEAD (termasuk untracked)
+# Display scanner logs in real time
+.\scripts\sonar-scan.ps1 -ShowLog
+
+# Display detailed scanner debug logs
+.\scripts\sonar-scan.ps1 -ShowLog -VerboseScanner
+
+# Analyze changed files (compared to HEAD)
+.\scripts\sonar-scan.ps1 -Mode Changed
+
+# Analyze changed files (compared to a specific branch)
 .\scripts\sonar-scan.ps1 -Mode Changed -BaseRef main
-.\scripts\sonar-scan.ps1 -Mode Staged             # hanya file staged
-.\scripts\sonar-scan.ps1 -Mode Folder -Path .\src\circuits
+
+# Analyze staged files
+.\scripts\sonar-scan.ps1 -Mode Staged
+
+# Analyze a specific folder
+.\scripts\sonar-scan.ps1 -Mode Folder -Path ".\src"
+
+# Analyze with custom file extensions
+.\scripts\sonar-scan.ps1 -Extensions @("ts", "tsx", "js")
 ```
 
-| Mode      | Cakupan                    | Project key                 |
-| --------- | -------------------------- | --------------------------- |
-| `Full`    | Seluruh `*.ts` dan `*.tsx` | `SONAR_PROJECT_KEY`         |
-| `Changed` | File berubah vs `-BaseRef` | `SONAR_PROJECT_KEY-partial` |
-| `Staged`  | File di staging area       | `SONAR_PROJECT_KEY-partial` |
-| `Folder`  | Satu folder                | `SONAR_PROJECT_KEY-partial` |
+### Analysis Modes
 
-Mode sebagian memakai project terpisah agar dashboard utama tidak menganggap file lain terhapus.
+| Mode      | Description                                              | Use Case                               |
+| --------- | -------------------------------------------------------- | -------------------------------------- |
+| `Full`    | Analyzes all source files in the project                 | Complete codebase review, CI pipelines |
+| `Changed` | Analyzes files changed since a reference (default: HEAD) | Pre-commit checks, PR reviews          |
+| `Staged`  | Analyzes files currently staged in git                   | Pre-push checks                        |
+| `Folder`  | Analyzes a specific directory                            | Targeted analysis of specific modules  |
 
-### Parameter
+### Parameters
 
-| Parameter       | Default                 | Keterangan                                 |
-| --------------- | ----------------------- | ------------------------------------------ |
-| `-Mode`         | `Full`                  | `Full`, `Changed`, `Staged`, atau `Folder` |
-| `-Path`         | `.`                     | Folder target (mode `Folder`)              |
-| `-BaseRef`      | `HEAD`                  | Pembanding git (mode `Changed`)            |
-| `-ProjectKey`   | `SONAR_PROJECT_KEY`     | Project key di SonarQube Cloud             |
-| `-Organization` | `SONAR_ORGANIZATION`    | Organization key                           |
-| `-HostUrl`      | `https://sonarcloud.io` | URL server                                 |
-| `-Extensions`   | `ts`, `tsx`             | Ekstensi yang dianalisis                   |
+| Parameter                | Type     | Default               | Description                                                             |
+| ------------------------ | -------- | --------------------- | ----------------------------------------------------------------------- |
+| `-Mode`                  | String   | `Full`                | Analysis mode: `Full`, `Changed`, `Staged`, or `Folder`                 |
+| `-ShowLog`               | Switch   | `false`               | Display scanner output in real time                                     |
+| `-VerboseScanner`        | Switch   | `false`               | Enable scanner debug output (`-X` flag)                                 |
+| `-Path`                  | String   | `.`                   | Target folder (required for `Folder` mode)                              |
+| `-BaseRef`               | String   | `HEAD`                | Git reference for comparison in `Changed` mode                          |
+| `-ProjectKey`            | String   | `ZK-Credential`       | SonarQube project key (can override with `SONAR_PROJECT_KEY` in `.env`) |
+| `-Extensions`            | String[] | `@("ts", "tsx")`      | File extensions to analyze                                              |
+| `-SonarUrl`              | String   | `""`                  | Use existing SonarQube server URL (skips Docker, e.g., `http://localhost:9000`) |
+| `-SonarImage`            | String   | `sonarqube:lts-community` | Docker image for SonarQube server (ignored if `-SonarUrl` is set) |
+| `-StartupTimeoutSeconds` | Int      | `600`                 | Maximum wait time for SonarQube startup                                 |
+| `-TaskTimeoutSeconds`    | Int      | `300`                 | Maximum wait time for compute engine processing                         |
 
-### Catatan
+### How It Works
 
-- Hasil lengkap (issue, quality gate, duplikasi) dilihat di dashboard https://sonarcloud.io.
-- Folder `.scannerwork/` dihasilkan scanner dan sudah masuk `.gitignore`.
-- Cek cepat satu file tanpa server: `sonar analyze --file <path>`.
+If `-SonarUrl` is provided:
+1. **Environment Setup**: Loads configuration from `.env` (optional `SONAR_PROJECT_KEY`)
+2. **Scanner Execution**: Runs `sonar-scanner` against the provided SonarQube server
+3. **Result Processing**: Displays dashboard URL
+
+If `-SonarUrl` is not provided (default Docker mode):
+1. **Environment Setup**: Loads configuration from `.env` (optional `SONAR_PROJECT_KEY`)
+2. **Docker Check**: Validates WSL Docker availability
+3. **Kernel Configuration**: Automatically sets required WSL kernel parameters for Elasticsearch
+4. **Server Startup**: Launches an ephemeral SonarQube container on a random port
+5. **Authentication**: Sets up temporary admin credentials and generates a user token
+6. **Scanner Execution**: Runs `sonar-scanner` with auto-generated configuration
+7. **Result Processing**: Waits for server-side analysis and displays dashboard URL
+8. **Cleanup**: Revokes tokens, stops container, and restores environment
+
+### Output
+
+The script runs the analysis and displays a SonarQube dashboard URL where you can view results in your browser:
+- Code quality metrics
+- Code smells, bugs, vulnerabilities
+- Security hotspots
+- Duplications
+- Code coverage (if configured)
+
+Exit codes:
+- `0`: Analysis completed successfully
+- `1`: Analysis failed or error occurred
+
+After analysis completes, open the provided dashboard URL to view detailed results and code quality reports.
+
+### Configuration Files
+
+- **`sonar-project.properties`**: SonarCloud configuration for remote analysis (optional)
+  - Used when analyzing directly on SonarCloud.io
+  - Requires `SONAR_TOKEN` and `SONAR_ORGANIZATION` in `.env`
+- **`.env.example`**: Template for environment variables including SonarCloud credentials
+
+### Troubleshooting
+
+**SonarQube startup timeout**
+- Increase `-StartupTimeoutSeconds` if your system is slow
+- Check Docker is running with `wsl docker info`
+
+**Kernel configuration errors**
+- Ensure WSL2 is properly configured
+- The script automatically applies required settings; manual intervention is rarely needed
+
+**No issues found but code has problems**
+- Verify file extensions match your project with `-Extensions`
+- Check exclusions in the script (node_modules, dist, build, etc.)
+
+**Container cleanup fails**
+- Manually remove containers: `wsl docker ps -a` and `wsl docker rm <container>`
+- The script uses unique container names each run
+
+### CI Integration
+
+For CI pipelines:
+```yaml
+- name: Run SonarQube Analysis
+  run: ./scripts/sonar-scan.ps1 -Mode Changed -BaseRef origin/main
+```
+
+### SonarCloud (Optional)
+
+For remote analysis on SonarCloud.io instead of local Docker:
+1. Create a SonarCloud account and project
+2. Add credentials to `.env`:
+   ```
+   SONAR_TOKEN=your_token_here
+   SONAR_ORGANIZATION=your_org
+   ```
+3. Run: `sonar-scanner` (reads from `sonar-project.properties`)

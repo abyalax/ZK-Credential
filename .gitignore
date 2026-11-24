@@ -6,6 +6,7 @@ coverage/
 .env.*
 !.env.example
 *.patch
+*temp*
 .scannerwork/
 
 # Local CLI state: credentials, challenges, holder private key, proofs (never commit)

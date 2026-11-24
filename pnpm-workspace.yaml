@@ -1,4 +1,10 @@
+packages:
+  - web
+
 allowBuilds:
   esbuild: true
   # Optional native addon pulled in by circomlibjs; it falls back to pure JS, so skip the build.
   blake-hash: false
+
+minimumReleaseAgeExclude:
+  - lucide-react@1.79.0

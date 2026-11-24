@@ -1,0 +1,1 @@
+export { HolderPage } from './HolderPage';

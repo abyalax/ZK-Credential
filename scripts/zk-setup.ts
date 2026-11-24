@@ -28,10 +28,9 @@ const VARIANTS_DIR = join(CIRCUITS_SRC, 'variants');
 const MIN_PTAU_POWER = 8;
 const NATIVE_CIRCOM = (() => {
   const exe = process.platform === 'win32' ? 'circom.exe' : 'circom';
-  const candidates = [
-    process.env.CIRCOM_PATH,
-    join(REPOSITORY_ROOT, 'node_modules', '.bin', exe),
-  ].filter((p): p is string => Boolean(p));
+  const candidates = [process.env.CIRCOM_PATH, join(REPOSITORY_ROOT, 'node_modules', '.bin', exe)].filter((p): p is string =>
+    Boolean(p),
+  );
 
   for (const candidate of candidates) {
     if (existsSync(candidate)) {

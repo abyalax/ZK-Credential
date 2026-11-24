@@ -1,0 +1,125 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "@fontsource-variable/schibsted-grotesk";
+@import "@fontsource-variable/source-serif-4";
+@import "@xyflow/react/dist/style.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Palette: Ink #14213D, Paper #F3F5F8, Seal green #1A6E50, Vermilion #B3342A, Cobalt #2D5BE3, Amber #8F5A00. */
+:root {
+  --background: #f3f5f8;
+  --foreground: #14213d;
+  --card: #ffffff;
+  --card-foreground: #14213d;
+  --popover: #ffffff;
+  --popover-foreground: #14213d;
+  --primary: #14213d;
+  --primary-foreground: #f3f5f8;
+  --secondary: #e6ebf1;
+  --secondary-foreground: #14213d;
+  --muted: #e9edf2;
+  --muted-foreground: #53627a;
+  --accent: #dde5f0;
+  --accent-foreground: #14213d;
+  --destructive: #b3342a;
+  --border: #d3dbe5;
+  --input: #c3cdda;
+  --ring: #2d5be3;
+  --radius: 0.5rem;
+
+  --accepted: #1a6e50;
+  --accepted-soft: #dcefe7;
+  --rejected: #b3342a;
+  --rejected-soft: #f7dedb;
+  --running: #2d5be3;
+  --running-soft: #dfe7fb;
+  --pending: #8f5a00;
+  --pending-soft: #f6e9cf;
+  --redaction: #14213d;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-accepted: var(--accepted);
+  --color-accepted-soft: var(--accepted-soft);
+  --color-rejected: var(--rejected);
+  --color-rejected-soft: var(--rejected-soft);
+  --color-running: var(--running);
+  --color-running-soft: var(--running-soft);
+  --color-pending: var(--pending);
+  --color-pending-soft: var(--pending-soft);
+  --color-redaction: var(--redaction);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --font-sans: "Schibsted Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Source Serif 4 Variable", ui-serif, Georgia, serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-serif;
+  }
+  :focus-visible {
+    @apply ring-ring ring-2 ring-offset-2 ring-offset-background outline-none;
+  }
+}
+
+/* The one moving thing: a node pulses while its step is running, an edge dashes while a payload travels. */
+@keyframes node-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--running) 35%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 8px color-mix(in srgb, var(--running) 0%, transparent);
+  }
+}
+.node-active {
+  animation: node-pulse 1.4s ease-in-out infinite;
+}
+@keyframes edge-flow {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+.edge-flowing {
+  stroke-dasharray: 8 4;
+  animation: edge-flow 0.8s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .node-active,
+  .edge-flowing {
+    animation: none;
+  }
+}
