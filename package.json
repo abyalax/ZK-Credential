@@ -10,6 +10,7 @@
   },
   "scripts": {
     "cli": "tsx src/interfaces/cli/main.ts",
+    "serve": "tsx src/interfaces/http/main.ts",
     "generate:issuer-key": "tsx scripts/generate-issuer-key.ts",
     "typecheck": "tsc --noEmit",
     "typecheck:contracts": "tsc -p contracts/tsconfig.json --noEmit",
@@ -35,12 +36,16 @@
     "test:e2e": "pnpm setup:zk full && pnpm chain:sync && pnpm chain:build && vitest run --config vitest.e2e.config.ts"
   },
   "dependencies": {
+    "@scalar/api-reference": "1.77.0",
+    "@scalar/express-api-reference": "0.10.35",
     "circomlibjs": "0.1.7",
+    "express": "5.3.0",
     "snarkjs": "0.7.6",
     "viem": "2.58.1"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.8",
+    "@types/express": "5.0.6",
     "@types/node": "26.6.6",
     "@types/snarkjs": "0.7.9",
     "circom2": "0.2.23",

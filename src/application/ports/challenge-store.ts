@@ -3,6 +3,8 @@ import type { Challenge, ChallengeValue, StoredChallenge } from '../../domain/in
 export interface ChallengeStore {
   save: (challenge: Challenge) => Promise<void>;
   find: (value: ChallengeValue) => Promise<StoredChallenge | undefined>;
+  /** Every stored challenge with its consumption state, oldest first. */
+  list: () => Promise<readonly StoredChallenge[]>;
   /**
    * Atomically marks the challenge as consumed.
    * Returns `false` if it is unknown or was already consumed, so concurrent

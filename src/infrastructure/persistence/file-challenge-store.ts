@@ -22,6 +22,7 @@ export const createFileChallengeStore = (path: string): ChallengeStore => {
         });
       }),
     find: (value) => serial(async () => (await readJsonFile<Entries>(path, {}))[value]),
+    list: () => serial(async () => Object.values(await readJsonFile<Entries>(path, {}))),
     markConsumed: (value, at) =>
       serial(async () => {
         const entries = await readJsonFile<Entries>(path, {});

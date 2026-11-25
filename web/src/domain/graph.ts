@@ -91,4 +91,4 @@ const mergeChips = (edge: GraphEdgeState, event: RunEvent): readonly PayloadChip
   return [...kept, ...incoming];
 };
 
-export const replay = (events: readonly RunEvent[]): GraphState => events.reduce(applyEvent, initialGraph());
+export const replay = (events: readonly RunEvent[]): GraphState => events.reduce((accumulator, event) => applyEvent(accumulator, event), initialGraph());

@@ -215,6 +215,12 @@ Bagian ini mencatat yang berbeda atau baru, untuk diputuskan saat D10 disetujui.
 6. Tiga endpoint baca tambahan (ditandai **+**) agar halaman issuer dan verifier bisa menampilkan state tanpa
    menyimpannya di klien.
 
+7. Galat permintaan memakai `{ "error": "INVALID_REQUEST", "detail": "..." }` (`detail` hanya petunjuk untuk manusia),
+   `INVALID_JSON` untuk badan yang bukan JSON, `LOCALHOST_ONLY` (403) untuk hostname bukan lokal, dan 500
+   `INFRASTRUCTURE_ERROR` atau `INTERNAL_ERROR` tanpa pesan galat.
+8. Server saat ini hanya menjalankan B4, jadi `applicableConfigurations` berisi `["B4"]` untuk 21 skenario dan `[]` untuk
+   lima lainnya. Rinciannya di [server.md](server.md).
+
 ## Tes kontrak
 
 Sisi server (U1), dengan proof sungguhan di mesin biasa:

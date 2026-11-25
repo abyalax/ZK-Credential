@@ -8,5 +8,6 @@ export const createInMemoryCredentialRepository = (): CredentialRepository => {
       entries.set(credential.credential.id, credential);
     },
     findById: async (id) => entries.get(id),
+    list: async () => [...entries.values()],
   };
 };

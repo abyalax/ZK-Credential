@@ -187,7 +187,7 @@ Prioritas sedang:
 
 Kondisional (hanya bila dosen atau penguji meminta demo):
 
-- [ ] Adapter Express tipis di atas use case yang ada: endpoint challenge dan verify saja, tanpa UI, store tetap lewat port
+- [x] Adapter Express tipis di atas use case yang ada, store tetap lewat port (U1, lihat `docs/ui/server.md`; B4 saja, `pnpm test:e2e` dengan proof sungguhan belum dijalankan)
 - [ ] Store berbasis database sebagai pengganti file store `.zk-state/` (juga menutup celah atomicity `markConsumed` antar-proses di `threats-to-validity.md`)
 - [ ] Frontend minimal untuk demo, hanya bila diminta secara eksplisit
 

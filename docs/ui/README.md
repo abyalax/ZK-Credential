@@ -1,14 +1,15 @@
 # UI demo: kontrak desain
 
 Dokumen ini menurunkan rancangan di [`docs/architecture/ui-demo.md`](../architecture/ui-demo.md) menjadi kontrak yang
-bisa dikerjakan. Status: frontend `web/` sudah ada dan berjalan dengan data mock; adapter Express (tahap U1) belum ada.
-Kontrak di sini adalah syarat yang harus dipenuhi adapter itu.
+bisa dikerjakan. Status: frontend `web/` berjalan dengan data mock atau lewat HTTP, dan adapter Express (tahap U1) sudah ada,
+lihat [server.md](server.md). Kontrak di sini adalah syarat yang dipenuhi adapter itu.
 
-| Dokumen                            | Isi                                                                                    |
-| ---------------------------------- | -------------------------------------------------------------------------------------- |
-| [contract.md](contract.md)         | Kontrak server dan UI: tipe, endpoint, SSE, katalog event, pemetaan penolakan          |
-| [architecture.md](architecture.md) | Arsitektur `web/`: lapisan, aturan dependensi, modul, state Jotai, graf React Flow     |
-| [screens.md](screens.md)           | Halaman, komponen, state kosong dan galat, teks antarmuka, aksesibilitas, token desain |
+| Dokumen                            | Isi                                                                                      |
+| ---------------------------------- | ---------------------------------------------------------------------------------------- |
+| [contract.md](contract.md)         | Kontrak server dan UI: tipe, endpoint, SSE, katalog event, pemetaan penolakan            |
+| [server.md](server.md)             | Adapter Express: cara menjalankan, dokumentasi API (Scalar), struktur, cakupan dan batas |
+| [architecture.md](architecture.md) | Arsitektur `web/`: lapisan, aturan dependensi, modul, state Jotai, graf React Flow       |
+| [screens.md](screens.md)           | Halaman, komponen, state kosong dan galat, teks antarmuka, aksesibilitas, token desain   |
 
 ## Tumpukan
 
@@ -30,8 +31,9 @@ Dua mode, dipilih lewat `VITE_API_MODE`:
 
 - `mock`: seluruh event dan "proof" dibuat skrip di browser. Cocok untuk mengembangkan tampilan tanpa chain dan
   tanpa artefak `pnpm setup:zk`. UI menampilkan banner "Mode mock" karena tidak ada Groth16 sungguhan.
-- `http`: UI bicara ke demo server lewat proxy `/api` (`VITE_API_PROXY`, bawaan `http://127.0.0.1:8787`). Prasyaratnya
-  sama dengan CLI: artefak `pnpm setup:zk`, chain lokal, dan alamat kontrak di `.env`.
+- `http`: UI bicara ke demo server (`pnpm serve`) lewat proxy `/api` (`VITE_API_PROXY`, bawaan `http://127.0.0.1:8787`).
+  Prasyaratnya sama dengan CLI: artefak `pnpm setup:zk`, chain lokal, dan alamat kontrak di `.env`. Dokumentasi API
+  interaktif ada di `http://127.0.0.1:8787/api/docs`.
 
 ## Hubungan dengan ui-demo.md
 

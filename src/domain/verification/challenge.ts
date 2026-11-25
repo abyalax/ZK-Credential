@@ -7,6 +7,15 @@ export type VerifierId = Brand<string, 'VerifierId'>;
 export const asChallengeValue = (value: string): ChallengeValue => value as ChallengeValue;
 export const asVerifierId = (value: string): VerifierId => value as VerifierId;
 
+export type ChallengeStatus = 'issued' | 'consumed' | 'expired';
+
+/** `consumed` wins over `expired`: a used challenge stays used after its time limit passes. */
+export const challengeStatus = (stored: StoredChallenge, now: number): ChallengeStatus => {
+  if (stored.consumedAt !== undefined) return 'consumed';
+  if (now >= stored.challenge.expiresAt) return 'expired';
+  return 'issued';
+};
+
 /** A single-use, verifier-scoped, time-limited nonce (challenge-based replay protection). */
 export interface Challenge {
   readonly value: ChallengeValue;

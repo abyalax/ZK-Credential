@@ -4,12 +4,11 @@ import { asHolderPrivateKey, asHolderPublicKey } from '../../domain/index.js';
 import {
   createFileChallengeStore,
   createFileCredentialRepository,
-  REPOSITORY_ROOT,
   readJsonFile,
   writeJsonFile,
 } from '../../infrastructure/index.js';
 import type { Container } from '../composition/index.js';
-import { createContainer, loadConfig } from '../composition/index.js';
+import { createContainer, DEFAULT_STATE_DIR, loadConfig, resolveStateDir } from '../composition/index.js';
 import { CliError } from './args.js';
 
 export interface CliIo {
@@ -26,7 +25,7 @@ export interface CliContext {
   readonly runBench: (args: readonly string[]) => Promise<number>;
 }
 
-export const DEFAULT_STATE_DIR = join(REPOSITORY_ROOT, '.zk-state');
+export { DEFAULT_STATE_DIR };
 
 export const statePath = (context: CliContext, name: string): string => join(context.stateDir, name);
 
@@ -34,7 +33,7 @@ export const createDefaultContext = (
   env: Readonly<Record<string, string | undefined>>,
   runBench: CliContext['runBench'],
 ): CliContext => {
-  const stateDir = env.ZK_STATE_DIR?.trim() || DEFAULT_STATE_DIR;
+  const stateDir = resolveStateDir(env);
   return {
     stateDir,
     runBench,

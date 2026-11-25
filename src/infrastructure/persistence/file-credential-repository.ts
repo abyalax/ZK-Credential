@@ -17,5 +17,6 @@ export const createFileCredentialRepository = (path: string): CredentialReposito
         await writeJsonFile(path, { ...entries, [credential.credential.id]: credential });
       }),
     findById: (id: CredentialId) => serial(async () => (await readJsonFile<Entries>(path, {}))[id]),
+    list: () => serial(async () => Object.values(await readJsonFile<Entries>(path, {}))),
   };
 };

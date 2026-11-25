@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { asChallengeValue, asVerifierId, createChallenge, evaluateChallenge } from '../../../src/domain/index.js';
+import {
+  asChallengeValue,
+  asVerifierId,
+  challengeStatus,
+  createChallenge,
+  evaluateChallenge,
+} from '../../../src/domain/index.js';
 
 const verifier = asVerifierId('verifier-a');
 const challenge = createChallenge({
@@ -44,5 +50,27 @@ describe('evaluateChallenge', () => {
       ok: false,
       error: 'CHALLENGE_EXPIRED',
     });
+  });
+});
+
+describe('challengeStatus', () => {
+  const stored = {
+    challenge: createChallenge({
+      value: asChallengeValue('ab'.repeat(31)),
+      verifierId: asVerifierId('v'),
+      now: 1_000,
+      ttlMs: 500,
+    }),
+    consumedAt: undefined,
+  };
+
+  it('is issued before expiry, expired from the expiry instant on', () => {
+    expect(challengeStatus(stored, 1_499)).toBe('issued');
+    expect(challengeStatus(stored, 1_500)).toBe('expired');
+  });
+
+  it('stays consumed after the time limit passes', () => {
+    expect(challengeStatus({ ...stored, consumedAt: 1_100 }, 1_200)).toBe('consumed');
+    expect(challengeStatus({ ...stored, consumedAt: 1_100 }, 9_999)).toBe('consumed');
   });
 });
