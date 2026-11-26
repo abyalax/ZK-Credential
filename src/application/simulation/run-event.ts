@@ -1,5 +1,5 @@
 /**
- * Event model of the demo run stream (docs/ui/contract.md). Kept free of HTTP so the same events
+ * Event model of the simulation run stream (docs/ui/contract.md). Kept free of HTTP so the same events
  * could be written to a file or a test log.
  */
 export type NodeId = 'issuer' | 'holder' | 'verifier' | 'contract';

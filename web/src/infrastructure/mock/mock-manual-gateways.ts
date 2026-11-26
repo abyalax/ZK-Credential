@@ -4,8 +4,8 @@ import { err, ok } from '@/shared';
 
 /** MOCK ONLY: in-memory wallet, challenge store and a fake proof, so the replay behavior can be tried in the browser. */
 const MOCK_ISSUER: IssuerView = {
-  id: 'issuer-demo',
-  name: 'Universitas Demo (mock)',
+  id: 'issuer-simulation',
+  name: 'Universitas Simulation (mock)',
   publicKey: '0x04a1…mock…9f2e',
   registered: true,
 };

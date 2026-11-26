@@ -24,7 +24,7 @@ infrastructure  -> application -> domain -> shared     (mengimplementasikan port
 | `infrastructure/`  | Gateway HTTP, klien SSE, gateway mock, `createContainer(mode)`.                                            | `application`, `domain`, `shared`       |
 | `features/`        | Satu folder per modul: atom Jotai, komponen, halaman. Hanya memakai gateway lewat `containerAtom`.         | `application`, `domain`, `shared`, `ui` |
 | `ui/`              | Komponen shadcn dan `cn`. Tidak tahu domain.                                                               | paket pihak ketiga saja                 |
-| `app/`, `main.tsx` | Shell, routing hash, batasan demo. `main.tsx` memilih gateway dan memasang `containerAtom`.                | semua                                   |
+| `app/`, `main.tsx` | Shell, routing hash, batasan simulation. `main.tsx` memilih gateway dan memasang `containerAtom`.                | semua                                   |
 
 `domain/` dan `shared/` tidak mengimpor paket apa pun, sama seperti `domain/` di `src/`. Aturan ini diuji di
 `web/tests/boundaries.test.ts`, termasuk larangan modul fitur mengimpor modul fitur lain.
@@ -35,7 +35,7 @@ infrastructure  -> application -> domain -> shared     (mengimplementasikan port
 web/
   src/
     main.tsx                  composition root
-    app/                      App.tsx (shell), route.ts (hash), DemoLimits.tsx, styles.css (token)
+    app/                      App.tsx (shell), route.ts (hash), SimulationLimits.tsx, styles.css (token)
     shared/                   result.ts, lib/format.ts
     domain/                   configuration, credential, proof, run-event, graph, playback, scenario, verification
     application/
@@ -44,7 +44,8 @@ web/
     infrastructure/
       http/                   client.ts, sse.ts, http-gateways.ts
       mock/                   catalog.ts (26 skenario), run-script.ts, mock-run-gateway.ts, mock-manual-gateways.ts
-      index.ts                createContainer(mode)
+      recorded/               load-recordings.ts, replay-runs.ts (mode replay)
+      index.ts                createContainer(mode), createReplayContainer, bootstrapContainer
     features/
       container.ts            containerAtom
       shared/                 async.ts, copy.ts, hooks.ts, state.ts, RedactedCredential, OutcomeBadge, PageHeader
@@ -118,12 +119,15 @@ penggambarannya di `features/simulator/`.
 | `issuer->holder`     | `credential.issued`                                  | `credentialId`, `issuerId`                        |
 | `verifier->holder`   | `challenge.issued`                                   | `verifierId`, `challenge`, `expiresAt`            |
 | `holder->verifier`   | `presentation.sent`                                  | `gpaThreshold`, `challenge`, `attributesRevealed` |
-| `verifier->contract` | `issuer.checked`, `proof.verified` (node `contract`) | `issuerId`, `gasUsed`                             |
+| `verifier->contract` | `issuer.checked`, `proof.verified` (node `contract`) | `issuerId`                                        |
 
 Status node: `idle` (abu), `active` (biru, berdenyut), `done` (hijau), `rejected` (merah, menampilkan `reason` dan
 penjelasannya). Status edge: `idle`, `flowing` (garis putus-putus bergerak), `done`, `blocked` (merah). Animasi hanya
 berjalan saat ada event dan dimatikan oleh `prefers-reduced-motion`. Node tidak bisa digeser, graf tidak di-zoom
 dengan scroll, dan atribusi React Flow dibiarkan tampil.
+
+`gasUsed` bukan payload edge: reducer menyimpannya di status node Contract (`GraphNodeState.gasUsed`) dan node
+menampilkannya sebagai "Gas N · referensi P6".
 
 Dua edge menghubungkan Holder dan Verifier; masing-masing keluar dan masuk lewat handle di sisi kiri atau kanan bawah
 dan atas node (`tl`, `bl`, `tr`, `br`), dengan label diletakkan di sisi luar agar tidak bertumpuk.
@@ -140,6 +144,15 @@ dan atas node (`tl`, `bl`, `tr`, `br`), dengan label diletakkan di sisi luar aga
 
 Mock tidak boleh dipakai untuk klaim penelitian. Banner "Mode mock" selalu tampil selama mode ini aktif.
 
+## Mode rekaman (replay)
+
+`?mode=replay` (atau `VITE_API_MODE=replay`) memuat `/recordings/index.json` dan berkas yang didaftarkannya, memvalidasi
+tiap berkas (`domain/recording.ts`), lalu memutarnya lewat `createReplayRuns`, yang memenuhi port `RunGateway` yang sama
+dengan server. `features/` tidak tahu bedanya. Gateway issuer, holder, dan verifier di mode ini menolak dengan
+`REPLAY_MODE`, dan shell menyembunyikan halaman peran. `main.tsx` membangun container secara asinkron karena hanya mode
+ini yang melakukan I/O; kegagalan memuat ditampilkan oleh `app/StartupError`. Format berkas dan aturan pemutaran ada di
+[contract.md](contract.md#format-rekaman).
+
 ## Pengujian
 
 - `tests/graph.test.ts`: reducer graf, pemetaan node penolak.
@@ -147,6 +160,10 @@ Mock tidak boleh dipakai untuk klaim penelitian. Banner "Mode mock" selalu tampi
 - `tests/mock-script.test.ts`: 22 serangan dan 4 honest, kesesuaian dengan `expectedOutcome` untuk tiap pasangan skenario
   dan konfigurasi, allowlist data publik, celah ablation pada `replay-relabelled-challenge`.
 - `tests/mock-manual-flow.test.ts`: alur role page di mock (terima sekali, replay ditolak, threshold di atas IPK, verifier salah).
+- `tests/recording.test.ts`: validasi rekaman (versi, summary, seq, runId, data non-publik) dan jeda pemutaran.
+- `tests/replay-runs.test.ts`: pemutaran berurutan dengan jeda, satu run sekaligus, berhenti saat unsubscribe, pemuat
+  rekaman (HTML dari fallback SPA Vite dianggap "tidak ada", satu berkas rusak menggagalkan semuanya).
+- `tests/recorded-fixture.test.ts`: berkas yang ditulis perekam asli diterima validator web, dan gas sampai ke node Contract.
 - `tests/boundaries.test.ts`: aturan lapisan di atas.
 
 Belum ada tes komponen atau tes browser. Pemeriksaan tampilan dilakukan manual lewat `pnpm dev`.

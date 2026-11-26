@@ -12,7 +12,7 @@ const PAGES: Record<RouteId, () => ReactNode> = {
   verifier: () => <VerifierPage />,
 };
 
-function Nav() {
+function Nav({ replay }: { readonly replay: boolean }) {
   const [route, setRoute] = useAtom(routeAtom);
   const link = (id: RouteId, label: string) => (
     <button
@@ -31,9 +31,13 @@ function Nav() {
   return (
     <nav aria-label="Halaman" className="flex flex-wrap items-center gap-1">
       {link('simulator', 'Simulator')}
-      <span className="mx-2 h-5 w-px bg-border" aria-hidden />
-      <span className="mr-1 text-sm text-muted-foreground">Coba sendiri:</span>
-      {ROUTES.filter((item) => item.group === 'role').map((item) => link(item.id, item.label))}
+      {!replay && (
+        <>
+          <span className="mx-2 h-5 w-px bg-border" aria-hidden />
+          <span className="mr-1 text-sm text-muted-foreground">Coba sendiri:</span>
+          {ROUTES.filter((item) => item.group === 'role').map((item) => link(item.id, item.label))}
+        </>
+      )}
     </nav>
   );
 }
@@ -41,17 +45,19 @@ function Nav() {
 export function App() {
   const route = useAtomValue(routeAtom);
   const container = useAtomValue(containerAtom);
+  // The role pages need a live server, so a replay always shows the simulator.
+  const page = container?.mode === 'replay' ? 'simulator' : route;
   return (
     <div className="min-h-screen">
       <header className="border-b bg-card">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-6 py-3">
           <span className="font-serif text-xl font-semibold">ZK-Credential</span>
-          <Nav />
+          <Nav replay={container?.mode === 'replay'} />
         </div>
       </header>
       <main className="mx-auto grid max-w-7xl gap-6 px-6 py-8">
-        {PAGES[route]()}
-        {container && <DemoLimits mode={container.mode} />}
+        {PAGES[page]()}
+        {container && <DemoLimits container={container} />}
       </main>
     </div>
   );

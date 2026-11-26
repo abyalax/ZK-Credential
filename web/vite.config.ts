@@ -10,7 +10,7 @@ export default defineConfig({
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   server: {
     port: 5173,
-    // The demo server (U1) listens on localhost only; the UI reaches it through this proxy.
+    // The simulation server (U1) listens on localhost only; the UI reaches it through this proxy.
     proxy: { '/api': { target: API_TARGET, changeOrigin: false } },
   },
 });

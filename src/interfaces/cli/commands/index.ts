@@ -5,5 +5,5 @@ import type { Command } from './types.js';
 
 export type { Command } from './types.js';
 
-/** Order = order in the help text: demo flow first. */
+/** Order = order in the help text: simulation flow first. */
 export const protocolCommands: readonly Command[] = [keygen, registerIssuer, issue, challenge, prove, verify, bench];

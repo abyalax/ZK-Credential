@@ -9,6 +9,8 @@ export interface GraphNodeState {
   readonly lastStep: string | undefined;
   readonly durationMs: number | undefined;
   readonly reason: string | undefined;
+  /** Contract node only: the P6 reference gas of `verifyCredential`, carried by an accepted `proof.verified`. */
+  readonly gasUsed: number | undefined;
 }
 
 export interface PayloadChip {
@@ -48,7 +50,13 @@ const STEP_EDGE: Readonly<Record<string, EdgeId>> = {
   'issuer.checked': 'verifier->contract',
 };
 
-const idleNode: GraphNodeState = { status: 'idle', lastStep: undefined, durationMs: undefined, reason: undefined };
+const idleNode: GraphNodeState = {
+  status: 'idle',
+  lastStep: undefined,
+  durationMs: undefined,
+  reason: undefined,
+  gasUsed: undefined,
+};
 const idleEdge: GraphEdgeState = { status: 'idle', payload: [] };
 
 export const initialGraph = (): GraphState => ({
@@ -67,8 +75,16 @@ const EDGE_STATUS: Readonly<Record<StepStatus, EdgeStatus>> = { started: 'flowin
 const edgeFor = (event: RunEvent): EdgeId | undefined =>
   event.step === 'proof.verified' && event.node === 'contract' ? 'verifier->contract' : STEP_EDGE[event.step];
 
+/** Gas is shown on the Contract node, not as a payload travelling along the edge. */
 const chips = (event: RunEvent): PayloadChip[] =>
-  Object.entries(event.data ?? {}).map(([key, value]) => ({ key, value: String(value) }));
+  Object.entries(event.data ?? {})
+    .filter(([key]) => key !== 'gasUsed')
+    .map(([key, value]) => ({ key, value: String(value) }));
+
+const gasOf = (event: RunEvent): number | undefined => {
+  const gas = event.data?.gasUsed;
+  return event.node === 'contract' && typeof gas === 'number' ? gas : undefined;
+};
 
 /** Pure reducer: one event moves one node, and the edge the step belongs to, if any. */
 export const applyEvent = (state: GraphState, event: RunEvent): GraphState => {
@@ -77,6 +93,7 @@ export const applyEvent = (state: GraphState, event: RunEvent): GraphState => {
     lastStep: event.step,
     durationMs: event.durationMs ?? state.nodes[event.node].durationMs,
     reason: event.reason,
+    gasUsed: gasOf(event) ?? state.nodes[event.node].gasUsed,
   };
   const edgeId = edgeFor(event);
   const edges = edgeId

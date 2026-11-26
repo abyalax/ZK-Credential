@@ -8,10 +8,10 @@ import {
   type RunSummary,
   resolveScenario,
 } from '../../../src/application/index.js';
-import { createDemoServices } from '../../support/demo-services.js';
+import { createSimulationServices } from '../../support/simulation-services.js';
 
-const runOn = async (scenarioId: string, configuration: ConfigurationId = 'B4') => {
-  const { services } = createDemoServices();
+const runOn = async (scenarioId: string, configuration: ConfigurationId = 'B4', verifyCredentialGas?: number) => {
+  const { services } = createSimulationServices({}, verifyCredentialGas === undefined ? {} : { verifyCredentialGas });
   const resolved = resolveScenario(scenarioId, configuration);
   if (!resolved.ok) throw new Error(`cannot resolve ${scenarioId}: ${resolved.error}`);
   const events: RunEvent[] = [];
@@ -147,5 +147,36 @@ describe('public data allowlist', () => {
     expect(privateDataKeys({ gpa: 350, fullName: 'x' })).toEqual(['gpa', 'fullName']);
     expect(privateDataKeys(Object.fromEntries(PUBLIC_DATA_KEYS.map((key) => [key, 1])))).toEqual([]);
     expect(privateDataKeys(undefined)).toEqual([]);
+  });
+});
+
+describe('reference gas on the Contract node', () => {
+  const GAS = 251_374;
+  const verified = (events: readonly RunEvent[]) =>
+    events.filter((event) => event.step === 'proof.verified' && event.status === 'completed');
+
+  it('attaches the P6 gas to an accepted verification, as an allowed public key', async () => {
+    const { events } = await runOn('valid-accepted', 'B4', GAS);
+    const [done] = verified(events);
+    expect(done?.node).toBe('contract');
+    expect(done?.data).toEqual({ gasUsed: GAS });
+    expect(events.every((event) => privateDataKeys(event.data).length === 0)).toBe(true);
+  });
+
+  it('shows gas only on the accepted pass of a replay, not on the rejected one', async () => {
+    const { events, summary } = await runOn('replay-same-proof', 'B4', GAS);
+    expect(summary.outcome.reason).toBe('CHALLENGE_ALREADY_USED');
+    expect(verified(events)).toHaveLength(1);
+    expect(events.filter((event) => event.data?.gasUsed !== undefined)).toHaveLength(1);
+  });
+
+  it('shows no gas when the contract rejects the proof', async () => {
+    const { events } = await runOn('proof-bytes-tampered', 'B4', GAS);
+    expect(events.some((event) => event.data?.gasUsed !== undefined)).toBe(false);
+  });
+
+  it('shows no gas when no P6 run measured it', async () => {
+    const { events } = await runOn('valid-accepted');
+    expect(verified(events)[0]?.data).toBeUndefined();
   });
 });

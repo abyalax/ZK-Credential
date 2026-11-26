@@ -1,8 +1,8 @@
-# Panduan menjalankan demo
+# Panduan menjalankan simulation
 
 Langkah demi langkah memakai UI `web/`, dari persiapan sampai simulator, beserta skenario dan aturan yang berlaku.
 Isinya disusun dari [screens.md](screens.md) dan kode `web/src/features/`. Rujukan lain: [server.md](server.md) untuk
-server demo dan [contract.md](contract.md) untuk kontrak API.
+server simulation dan [contract.md](contract.md) untuk kontrak API.
 
 ## 1. Persiapan
 
@@ -13,7 +13,7 @@ Bandingkan bisa dipakai.
 cd web && pnpm install && pnpm dev     # VITE_API_MODE=mock (bawaan)
 ```
 
-**Mode http** memakai proof Groth16 sungguhan lewat server demo, hanya untuk konfigurasi B4.
+**Mode http** memakai proof Groth16 sungguhan lewat server simulation, hanya untuk konfigurasi B4.
 
 ```bash
 pnpm install
@@ -32,7 +32,7 @@ cd web && cp .env.example .env   # ubah VITE_API_MODE=http
 pnpm dev
 ```
 
-## 2. Alur demo
+## 2. Alur simulation
 
 Urutannya tetap, karena tiap langkah butuh hasil langkah sebelumnya:
 
@@ -83,7 +83,8 @@ Urutannya tetap, karena tiap langkah butuh hasil langkah sebelumnya:
    waktu, dan kesesuaian dengan ekspektasi katalog. Amber ("Serangan lolos pada B\*") hanya muncul di B1 sampai B3
    sebagai celah ablation.
 6. Panel kanan punya tiga tab:
-   - **Langkah**: log event dengan durasi dan alasan.
+   - **Langkah**: log event dengan durasi dan alasan. Setelah verifikasi yang diterima di B4, node Contract menampilkan
+     "Gas N · referensi P6": angka `estimateGas` dari benchmark P6, bukan pengukuran run itu.
    - **Yang diketahui verifier**: jumlah atribut terbuka. A: 8, SD: IPK persis, B1 sampai B4: 0.
    - **Bandingkan**: menjalankan satu skenario pada B1 sampai B4 berurutan. Tombolnya nonaktif bila skenario tidak
      berlaku pada keempat konfigurasi.
@@ -135,7 +136,21 @@ yang tidak benar, dan ikatan proof ke satu verifier.
 | Issuer belum didaftarkan                                             | gagal terbit dengan petunjuk `pnpm cli register-issuer` |
 | Tunggu challenge lewat 5 menit                                       | status _Kedaluwarsa_, hilang dari pilihan Holder        |
 
-## 7. Batasan
+## 7. Cadangan sidang (rekaman)
+
+Siapkan sebelum sidang, di mesin yang akan dipakai, saat simulation live masih sehat:
+
+1. Jalankan server (`pnpm serve`), lalu `pnpm record:simulation`. Bawaannya merekam `valid-accepted` dan `replay-same-proof`
+   pada B4; tambah skenario dengan `--scenario=a,b`.
+2. Periksa `web/public/recordings/` berisi `index.json` dan satu berkas per skenario, lalu commit.
+3. Uji tanpa server: matikan `pnpm serve`, buka `http://localhost:5173/?mode=replay#/simulator`, jalankan kedua skenario.
+   Banner amber "Rekaman cadangan, bukan simulation live" harus tampil.
+
+Saat sidang, bila simulation live macet: klik "Buka rekaman cadangan" di dasar halaman, atau buka `?mode=replay`. Jelaskan
+terus terang bahwa itu rekaman run sungguhan, bukan eksekusi saat itu. Rekam ulang setelah mengubah circuit, kontrak, atau
+katalog, karena rekaman tidak ikut berubah. Video layar sebagai cadangan kedua tidak dibuat otomatis.
+
+## 8. Batasan
 
 - Di mode http, tab Bandingkan nonaktif karena server hanya melayani B4. Pakai mode mock untuk tabel perbandingan.
 - ID verifier di halaman Verifier terkunci `verifier-a`, jadi skenario "verifier salah" hanya bisa diperagakan lewat

@@ -8,6 +8,8 @@ export interface VerificationFacts {
   readonly issuerId?: string;
   /** Wall time of the whole verification, preconditions included. */
   readonly durationMs: number;
+  /** Reference figure from the P6 benchmark, shown on an accepted verification. Not measured per run. */
+  readonly gasUsed?: number;
 }
 
 /** Rejections the verifier raises before the contract is consulted. */
@@ -63,7 +65,10 @@ export const verificationEvents = (
     preconditions,
     issuer,
     started,
-    completed('contract', 'proof.verified', { durationMs: facts.durationMs }),
+    completed('contract', 'proof.verified', {
+      durationMs: facts.durationMs,
+      ...(facts.gasUsed === undefined ? {} : { data: { gasUsed: facts.gasUsed } }),
+    }),
     completed('verifier', 'challenge.consumed'),
   ];
 };

@@ -1,6 +1,6 @@
-# Rancangan UI demo (opsional, status: rancangan, belum dikerjakan)
+# Rancangan UI simulation (opsional, status: rancangan, belum dikerjakan)
 
-Rancangan ini dibuat untuk kemungkinan dosen meminta demo yang lebih mudah dipahami saat sidang.
+Rancangan ini dibuat untuk kemungkinan dosen meminta simulation yang lebih mudah dipahami saat sidang.
 Belum ada kode. Fase ini berada di jalur "Opsional" rencana skripsi (keputusan D4) dan dikerjakan
 setelah run P6 di mesin penulis serta Bab 4 dan Bab 5 selesai, sehingga tidak menggeser jalur kritis.
 
@@ -23,10 +23,10 @@ Non-tujuan:
 
 | ID  | Keputusan       | Opsi                                                      | Usulan                                                                  |
 | --- | --------------- | --------------------------------------------------------- | ----------------------------------------------------------------------- |
-| D10 | Cakupan UI demo | (a) tidak ada UI; (b) role page + simulator; (c) UI penuh | (b), dikerjakan setelah P6 dan Bab 4/5; rencana v1.6 mencatat perubahan |
+| D10 | Cakupan UI simulation | (a) tidak ada UI; (b) role page + simulator; (c) UI penuh | (b), dikerjakan setelah P6 dan Bab 4/5; rencana v1.6 mencatat perubahan |
 
 Bila disetujui, D4 berubah dari "CLI + test suite dulu; Express menyusul" menjadi "CLI + test suite,
-lalu Express + UI demo untuk sidang", dan log perubahan rencana mendapat entri v1.6.
+lalu Express + UI simulation untuk sidang", dan log perubahan rencana mendapat entri v1.6.
 
 ## Arsitektur
 
@@ -52,13 +52,13 @@ src/application/use-cases/   makeIssueCredential, makeIssueChallenge, makeGenera
 ### Titik desain yang perlu diputuskan saat implementasi
 
 1. **Satu issuer di konfigurasi.** `AppConfig.issuer` hanya memuat satu issuer dari env. Skenario
-   "issuer tidak terdaftar" dan "issuer lain" butuh issuer kedua; usulannya dibuat oleh adapter demo
+   "issuer tidak terdaftar" dan "issuer lain" butuh issuer kedua; usulannya dibuat oleh adapter simulation
    sebagai kunci sekali pakai (seperti `rogueKeys` di harness P5), bukan lewat konfigurasi.
 2. **Skenario serangan.** Definisi serangan ada di `experiments/scenarios/catalog.ts` dan memakai
    `tests/support/`. Server tidak boleh bergantung langsung pada `tests/`. Pilihannya: pindahkan
-   definisi serangan ke modul bersama yang tidak bergantung pada vitest, atau demo memakai fasad tipis
-   yang memanggil runner P5. Usulan: modul bersama, dengan `experiments/` dan demo sebagai pemakai.
-3. **Konfigurasi A dan SD.** Keduanya tidak memakai circuit. Demo memakai runner dan modul SD-JWT
+   definisi serangan ke modul bersama yang tidak bergantung pada vitest, atau simulation memakai fasad tipis
+   yang memanggil runner P5. Usulan: modul bersama, dengan `experiments/` dan simulation sebagai pemakai.
+3. **Konfigurasi A dan SD.** Keduanya tidak memakai circuit. Simulation memakai runner dan modul SD-JWT
    yang sama dengan P5 dan P6, bukan implementasi baru.
 
 ## Model event realtime (SSE)
@@ -75,7 +75,7 @@ interface RunEvent {
   readonly status: 'started' | 'completed' | 'rejected';
   readonly at: number; // epoch ms (dari Clock port)
   readonly durationMs?: number;
-  readonly data?: Record<string, string | number>; // hanya data publik (lihat bagian keamanan demo)
+  readonly data?: Record<string, string | number>; // hanya data publik (lihat bagian keamanan simulation)
   readonly reason?: string; // alasan penolakan, nilai yang sama dengan hasil P5
 }
 ```
@@ -94,7 +94,7 @@ dengan `reason` (mis. `KEY_BINDING_INVALID`), dan node penolak menyala merah.
 | `POST /api/verifier/challenges`    | `makeIssueChallenge`   | Body: verifier, TTL                                          |
 | `POST /api/holder/proofs`          | `makeGenerateProof`    | Body: credentialId, challenge, threshold                     |
 | `POST /api/verifier/verifications` | `makeVerifyCredential` | Body: proof dan public signals                               |
-| `POST /api/runs`                   | orkestrator demo       | Body: konfigurasi (A, SD, B1-B4), skenario (normal/serangan) |
+| `POST /api/runs`                   | orkestrator simulation       | Body: konfigurasi (A, SD, B1-B4), skenario (normal/serangan) |
 | `GET  /api/runs/:id/events`        | SSE                    | Event di atas                                                |
 | `GET  /api/scenarios`              | katalog serangan       | 22 serangan + 4 honest, dan padanan SD                       |
 
@@ -129,12 +129,12 @@ dan verifier dapat dibuka berdampingan saat sidang.
 - **Panel "yang diketahui verifier":** A = 8 atribut, SD = IPK persis, B1-B4 = 0 atribut
   (nilai `attributesRevealed` pada `experiments/configurations`).
 
-## Keamanan dan keterbatasan demo
+## Keamanan dan keterbatasan simulation
 
 Harus dinyatakan di UI dan dicatat di batasan skripsi:
 
-- Proof dibangun di server (D5: Node saja). Di demo, private key holder berada di server; ini
-  penyederhanaan demo, bukan arsitektur klien yang sebenarnya.
+- Proof dibangun di server (D5: Node saja). Di simulation, private key holder berada di server; ini
+  penyederhanaan simulation, bukan arsitektur klien yang sebenarnya.
 - Event hanya membawa data publik. Private key, atribut kredensial, dan secret tidak dikirim ke
   klien lewat SSE atau log.
 - Tanpa autentikasi: server hanya untuk `localhost`, bukan untuk jaringan publik.
@@ -148,7 +148,7 @@ Harus dinyatakan di UI dan dicatat di batasan skripsi:
 - Integrasi: satu run normal dan beberapa serangan (replay, relabel, tanda tangan) lewat HTTP dengan
   proof sungguhan, hasilnya sama dengan P5. Dijalankan di mesin biasa, bukan sandbox.
 - Pemeriksaan bahwa event tidak memuat nilai privat (daftar kunci yang diizinkan).
-- Cadangan sidang: rekaman layar satu alur normal dan satu serangan, bila demo live bermasalah.
+- Cadangan sidang: rekaman layar satu alur normal dan satu serangan, bila simulation live bermasalah.
 
 ## Tahapan dan estimasi kasar
 
@@ -167,5 +167,5 @@ sidang dan dipertahankan paling akhir.
 
 - Rencana skripsi: D10, perubahan D4, dan log v1.6.
 - `overview.md`: baris `interfaces/` tidak lagi berstatus "HTTP is on hold".
-- `threats-to-validity.md`: batasan demo di atas.
+- `threats-to-validity.md`: batasan simulation di atas.
 - `TODO.md`: item kondisional "Adapter Express, UI" dipindahkan menjadi item U1-U4.

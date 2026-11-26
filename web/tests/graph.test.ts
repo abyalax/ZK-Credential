@@ -38,6 +38,23 @@ describe('graph reducer', () => {
     expect(graph.edges['verifier->contract'].status).toBe('blocked');
   });
 
+  it('keeps gas on the contract node and out of the edge payload', () => {
+    const graph = replay([
+      event({ node: 'contract', step: 'proof.verified', status: 'completed', durationMs: 40, data: { gasUsed: 251_374 } }, 0),
+      event({ node: 'verifier', step: 'challenge.consumed', status: 'completed' }, 1),
+    ]);
+    expect(graph.nodes.contract.gasUsed).toBe(251_374);
+    expect(graph.edges['verifier->contract'].payload).toEqual([]);
+    expect(graph.nodes.verifier.gasUsed).toBeUndefined();
+  });
+
+  it('shows no gas when the proof is rejected or the event carries none', () => {
+    const rejected = replay([event({ node: 'contract', step: 'proof.verified', status: 'rejected', reason: 'PROOF_INVALID' })]);
+    expect(rejected.nodes.contract.gasUsed).toBeUndefined();
+    const plain = replay([event({ node: 'contract', step: 'proof.verified', status: 'completed' })]);
+    expect(plain.nodes.contract.gasUsed).toBeUndefined();
+  });
+
   it('does not mutate the previous state', () => {
     const before = initialGraph();
     applyEvent(before, event({ node: 'issuer', step: 'credential.issued', status: 'completed' }));

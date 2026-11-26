@@ -29,6 +29,8 @@ export interface RunScenarioDeps {
   readonly issueChallenge: ReturnType<typeof makeIssueChallenge>;
   readonly generateProof: ReturnType<typeof makeGenerateProof>;
   readonly verifyCredential: ReturnType<typeof makeVerifyCredential>;
+  /** P6 reference gas of `CredentialVerifier.verifyCredential`; attached to accepted verifications when known. */
+  readonly verifyCredentialGas?: number;
 }
 
 export interface RunScenarioInput {
@@ -48,7 +50,7 @@ interface Run {
 
 const DEMO_STUDENT = {
   studentNumber: '2210001',
-  fullName: 'Demo Student',
+  fullName: 'Simulation Student',
   degree: 'S.Kom.',
   graduationDate: '2026-08-20',
 } as const;
@@ -189,7 +191,13 @@ const presentOnce = async (run: Run, presented: Proof, verifierId: string): Prom
   const durationMs = run.deps.clock.now() - startedAt;
   const trusted = await run.deps.issuers.list();
   const issuerId = trusted.find((candidate) => candidate.publicKey === publicSignals.issuerPublicKey)?.id;
-  const facts = { issuerPublicKey: publicSignals.issuerPublicKey, durationMs, ...(issuerId ? { issuerId } : {}) };
+  const { verifyCredentialGas } = run.deps;
+  const facts = {
+    issuerPublicKey: publicSignals.issuerPublicKey,
+    durationMs,
+    ...(issuerId ? { issuerId } : {}),
+    ...(verifyCredentialGas === undefined ? {} : { gasUsed: verifyCredentialGas }),
+  };
   for (const draft of verificationEvents(verdict, facts)) run.emit(draft);
   return toOutcome(verdict);
 };
@@ -232,7 +240,7 @@ const execute = async (run: Run): Promise<RunOutcome> => {
 };
 
 /**
- * Demo orchestrator: runs one scenario against the real use cases and reports each step as an event.
+ * Simulation orchestrator: runs one scenario against the real use cases and reports each step as an event.
  * It adds no protocol rule; every verdict comes from `makeVerifyCredential`. Returns the closing summary.
  */
 export const makeRunScenario =

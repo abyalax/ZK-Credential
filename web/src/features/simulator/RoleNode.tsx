@@ -2,7 +2,7 @@ import { Handle, type Node, type NodeProps, Position } from '@xyflow/react';
 import { Blocks, CircleCheck, CircleX, GraduationCap, ShieldCheck, Wallet } from 'lucide-react';
 import type { GraphNodeState, NodeId } from '@/domain';
 import { explainReason } from '@/domain';
-import { formatMs } from '@/shared';
+import { formatGas, formatMs } from '@/shared';
 import { cn } from '@/ui/lib/cn';
 import { stepLabel } from './step-labels';
 
@@ -27,6 +27,19 @@ const HANDLES: readonly { id: string; position: Position; offset?: string }[] = 
   { id: 'bl', position: Position.Bottom, offset: '30%' },
   { id: 'br', position: Position.Bottom, offset: '70%' },
 ];
+
+/** The gas is the P6 figure for `verifyCredential`, not something this run measured. */
+function GasLine({ gas }: { readonly gas: number }) {
+  return (
+    <p
+      className="mt-1 text-xs"
+      title="estimateGas dari CredentialVerifier.verifyCredential pada hasil P6 (B4). Bukan pengukuran run ini."
+    >
+      <span className="font-medium tabular-nums">Gas {formatGas(gas)}</span>
+      <span className="text-muted-foreground"> · referensi P6</span>
+    </p>
+  );
+}
 
 export function RoleNode({ data }: NodeProps<RoleFlowNode>) {
   const Icon = ICONS[data.id];
@@ -62,6 +75,7 @@ export function RoleNode({ data }: NodeProps<RoleFlowNode>) {
           <span className="text-muted-foreground">Menunggu</span>
         )}
       </p>
+      {state.gasUsed !== undefined && <GasLine gas={state.gasUsed} />}
       {state.reason && (
         <p className="mt-1 text-xs text-rejected">
           <code className="font-mono font-semibold">{state.reason}</code>

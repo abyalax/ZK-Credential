@@ -17,7 +17,7 @@ baseAtom.onMount = (set) => {
   return () => window.removeEventListener('hashchange', listener);
 };
 
-/** Hash routing keeps the demo a static page: `#/issuer`, `#/holder`, `#/verifier`, `#/simulator`. */
+/** Hash routing keeps the simulation a static page: `#/issuer`, `#/holder`, `#/verifier`, `#/simulator`. */
 export const routeAtom = atom(
   (get) => get(baseAtom),
   (_get, set, next: RouteId) => {

@@ -8,7 +8,7 @@ import { createApp } from '../../src/interfaces/http/index.js';
 import { startLocalChain } from '../chain/support/local-chain.js';
 
 /**
- * U1: the demo server end to end, with real Groth16 proofs and the in-process Hardhat chain, as
+ * U1: the simulation server end to end, with real Groth16 proofs and the in-process Hardhat chain, as
  * docs/ui/contract.md asks ("Tes kontrak", sisi server). Needs `pnpm setup:zk full`, `pnpm chain:sync`
  * and `pnpm chain:build` (`pnpm test:e2e`). Runs on one machine at a time: peak memory is the B4 prover's.
  */
@@ -98,7 +98,7 @@ describe('role endpoints with real proofs', () => {
   });
 });
 
-describe('demo runs with real proofs: same outcome as P5 on B4', () => {
+describe('simulation runs with real proofs: same outcome as P5 on B4', () => {
   it.each([
     ['valid-accepted', 'ACCEPTED'],
     ['holder-without-key', 'PROVE_FAILED'],

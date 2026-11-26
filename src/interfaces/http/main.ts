@@ -4,6 +4,7 @@ import {
   createFileChallengeStore,
   createFileCredentialRepository,
   createFileHolderKeyring,
+  loadP6GasReference,
   REPOSITORY_ROOT,
 } from '../../infrastructure/index.js';
 import { createContainer, loadConfig, resolveStateDir } from '../composition/index.js';
@@ -16,7 +17,16 @@ if (existsSync(envFile)) process.loadEnvFile(envFile);
 
 // Same state files as the CLI, so `pnpm cli` and the UI act as the same holder and see the same credentials.
 const stateDir = resolveStateDir(process.env);
+// Gas on the Contract node is the P6 figure, not a per-run measurement (docs/architecture/ui-simulation.md).
+const gasReference = loadP6GasReference();
+console.log(
+  gasReference
+    ? `Gas reference (P6 run ${gasReference.runId}): ${gasReference.verifyCredentialGas}`
+    : 'Gas reference: none (no P6 run with gas under experiments/results; run pnpm experiment:p6)',
+);
+
 const container = await createContainer(loadConfig(process.env), {
+  ...(gasReference ? { verifyCredentialGas: gasReference.verifyCredentialGas } : {}),
   credentials: createFileCredentialRepository(join(stateDir, 'credentials.json')),
   challenges: createFileChallengeStore(join(stateDir, 'challenges.json')),
   holderKeyring: createFileHolderKeyring(join(stateDir, 'holder.json')),

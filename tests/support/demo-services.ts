@@ -23,7 +23,7 @@ import { InfrastructureError } from '../../src/shared/index.js';
 import { createFakeClock, createFakeRandomness, createFakeSigner, type FakeClock, testIssuer } from './fakes.js';
 
 /** Decimal private keys, because the alias attack adds the field order to the secret. */
-export const demoHolder: HolderKeys = {
+export const simulationHolder: HolderKeys = {
   publicKey: asHolderPublicKey('12345'),
   privateKey: asHolderPrivateKey('424242'),
 };
@@ -62,7 +62,7 @@ const parse = (payload: string): unknown => {
  */
 export const createBindingFakeEngine = (issuer: Issuer = testIssuer): ProofEngine => ({
   generate: async ({ holderPrivateKey, request }) => {
-    if (holderPrivateKey !== demoHolder.privateKey) throw new InfrastructureError('witness refused');
+    if (holderPrivateKey !== simulationHolder.privateKey) throw new InfrastructureError('witness refused');
     const publicSignals = {
       issuerPublicKey: issuer.publicKey,
       gpaThreshold: request.gpaThreshold,
@@ -81,20 +81,23 @@ export const createBindingFakeEngine = (issuer: Issuer = testIssuer): ProofEngin
   },
 });
 
-export interface DemoServices {
+export interface SimulationServices {
   readonly services: HttpServices;
   readonly clock: FakeClock;
 }
 
 /** The HTTP slice of the container, wired to in-memory adapters and the binding fake engine. */
-export const createDemoServices = (overrides: Partial<HttpServices> = {}): DemoServices => {
+export const createSimulationServices = (
+  overrides: Partial<HttpServices> = {},
+  options: { readonly verifyCredentialGas?: number } = {},
+): SimulationServices => {
   const clock = createFakeClock();
   const randomness = createFakeRandomness();
   const credentials = createInMemoryCredentialRepository();
   const challenges = createInMemoryChallengeStore();
   const issuers = createStaticIssuerRegistry([testIssuer]);
   const proofEngine = createBindingFakeEngine();
-  const holderKeyring: HolderKeyring = { current: async () => demoHolder, generate: async () => attackerHolder };
+  const holderKeyring: HolderKeyring = { current: async () => simulationHolder, generate: async () => attackerHolder };
 
   const issueCredential = makeIssueCredential({ credentials, issuers, signer: createFakeSigner(), clock, randomness });
   const issueChallenge = makeIssueChallenge({ challenges, clock, randomness });
@@ -124,6 +127,7 @@ export const createDemoServices = (overrides: Partial<HttpServices> = {}): DemoS
         issueChallenge,
         generateProof,
         verifyCredential,
+        ...(options.verifyCredentialGas === undefined ? {} : { verifyCredentialGas: options.verifyCredentialGas }),
       }),
       ...overrides,
     },

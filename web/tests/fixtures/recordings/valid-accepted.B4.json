@@ -1,0 +1,150 @@
+{
+  "version": 1,
+  "recordedAt": "2026-11-26T08:00:00.000Z",
+  "configuration": "B4",
+  "scenario": {
+    "id": "valid-accepted",
+    "title": "Valid proof for the credential owner is accepted",
+    "kind": "honest",
+    "category": "baseline",
+    "openIn": [],
+    "fullReason": "ACCEPTED",
+    "applicableConfigurations": ["B4"]
+  },
+  "events": [
+    {
+      "node": "issuer",
+      "step": "credential.issued",
+      "status": "completed",
+      "data": {
+        "credentialId": "00000000000000000000000000000001",
+        "issuerId": "issuer-1"
+      },
+      "runId": "r1",
+      "seq": 0,
+      "at": 1700000000000
+    },
+    {
+      "node": "verifier",
+      "step": "challenge.issued",
+      "status": "completed",
+      "data": {
+        "verifierId": "verifier-a",
+        "challenge": "00000000000000000000000000000000000000000000000000000000000002",
+        "expiresAt": 1700000300000
+      },
+      "runId": "r1",
+      "seq": 1,
+      "at": 1700000000000
+    },
+    {
+      "node": "holder",
+      "step": "witness.computed",
+      "status": "started",
+      "runId": "r1",
+      "seq": 2,
+      "at": 1700000000000
+    },
+    {
+      "node": "holder",
+      "step": "proof.generated",
+      "status": "started",
+      "runId": "r1",
+      "seq": 3,
+      "at": 1700000000000
+    },
+    {
+      "node": "holder",
+      "step": "witness.computed",
+      "status": "completed",
+      "runId": "r1",
+      "seq": 4,
+      "at": 1700000000000
+    },
+    {
+      "node": "holder",
+      "step": "proof.generated",
+      "status": "completed",
+      "durationMs": 0,
+      "data": {
+        "proofBytes": 245
+      },
+      "runId": "r1",
+      "seq": 5,
+      "at": 1700000000000
+    },
+    {
+      "node": "holder",
+      "step": "presentation.sent",
+      "status": "completed",
+      "data": {
+        "gpaThreshold": 300,
+        "verifierId": "verifier-a",
+        "challenge": "00000000000000000000000000000000000000000000000000000000000002",
+        "attributesRevealed": 0
+      },
+      "runId": "r1",
+      "seq": 6,
+      "at": 1700000000000
+    },
+    {
+      "node": "verifier",
+      "step": "preconditions.checked",
+      "status": "completed",
+      "runId": "r1",
+      "seq": 7,
+      "at": 1700000000000
+    },
+    {
+      "node": "contract",
+      "step": "issuer.checked",
+      "status": "completed",
+      "data": {
+        "issuerPublicKey": "1:2",
+        "issuerId": "issuer-1"
+      },
+      "runId": "r1",
+      "seq": 8,
+      "at": 1700000000000
+    },
+    {
+      "node": "contract",
+      "step": "proof.verified",
+      "status": "started",
+      "runId": "r1",
+      "seq": 9,
+      "at": 1700000000000
+    },
+    {
+      "node": "contract",
+      "step": "proof.verified",
+      "status": "completed",
+      "durationMs": 0,
+      "data": {
+        "gasUsed": 251374
+      },
+      "runId": "r1",
+      "seq": 10,
+      "at": 1700000000000
+    },
+    {
+      "node": "verifier",
+      "step": "challenge.consumed",
+      "status": "completed",
+      "runId": "r1",
+      "seq": 11,
+      "at": 1700000000000
+    }
+  ],
+  "summary": {
+    "runId": "r1",
+    "configuration": "B4",
+    "scenarioId": "valid-accepted",
+    "outcome": {
+      "accepted": true,
+      "stage": "verify",
+      "reason": "ACCEPTED"
+    },
+    "totalMs": 0
+  }
+}

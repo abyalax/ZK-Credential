@@ -80,7 +80,7 @@ harness P5).
 
 ## Endpoint
 
-Tanda **(+)** berarti tambahan terhadap sketsa di `ui-demo.md`.
+Tanda **(+)** berarti tambahan terhadap sketsa di `ui-simulation.md`.
 
 | Method dan path                         | Memanggil              | Body                                                       | Respons 200                                                          |
 | --------------------------------------- | ---------------------- | ---------------------------------------------------------- | -------------------------------------------------------------------- |
@@ -93,7 +93,7 @@ Tanda **(+)** berarti tambahan terhadap sketsa di `ui-demo.md`.
 | `POST /api/verifier/challenges`         | `makeIssueChallenge`   | `{ verifierId, ttlMs }`                                    | `ChallengeView`                                                      |
 | `POST /api/verifier/verifications`      | `makeVerifyCredential` | `{ proof: ProofView, verifierId, requiredThreshold }`      | `Outcome & { durationMs }`                                           |
 | `GET  /api/scenarios`                   | katalog serangan       | -                                                          | `Scenario[]` (22 serangan dan 4 honest)                              |
-| `POST /api/runs`                        | orkestrator demo       | `{ configuration, scenarioId }`                            | 202 `{ runId }`                                                      |
+| `POST /api/runs`                        | orkestrator simulation       | `{ configuration, scenarioId }`                            | 202 `{ runId }`                                                      |
 | `GET  /api/runs/:id/events`             | SSE                    | -                                                          | aliran event (bagian berikut)                                        |
 
 Galat per endpoint:
@@ -156,7 +156,7 @@ Aturan aliran:
 | `presentation.sent`             | holder                             | completed                                                     | A/SD: `attributesRevealed`; B: `gpaThreshold`, `verifierId`, `challenge`, `attributesRevealed` |
 | `preconditions.checked` **(+)** | verifier                           | completed, rejected                                           | -                                                                                              |
 | `issuer.checked` **(+)**        | contract                           | completed, rejected                                           | `issuerId`, `issuerPublicKey`                                                                  |
-| `proof.verified`                | contract (B1-B4), verifier (A, SD) | started, completed (+`durationMs`), rejected                  | `gasUsed` bila ada hasil P6                                                                    |
+| `proof.verified`                | contract (B1-B4), verifier (A, SD) | started, completed (+`durationMs`), rejected                  | completed pada B4: `gasUsed` bila ada hasil P6 (lihat "Gas referensi P6")                      |
 | `challenge.consumed`            | verifier                           | completed                                                     | -                                                                                              |
 
 Langkah per konfigurasi (alur sah):
@@ -170,6 +170,21 @@ Langkah per konfigurasi (alur sah):
 Skenario dua tahap (`replay-same-proof`, `replay-relabelled-challenge`) menjalankan alur sah penuh dulu, lalu
 `presentation.sent` dan rangkaian pemeriksaan sekali lagi. Pada B1-B3, `replay-relabelled-challenge` lolos di tahap kedua
 (celah ablation), dan itu harus tampil sebagai "serangan lolos", bukan galat.
+
+## Gas referensi P6
+
+`gasUsed` pada `proof.verified` yang `completed` adalah **angka referensi dari benchmark P6**, bukan pengukuran run
+itu: `estimateGas` untuk `CredentialVerifier.verifyCredential` dengan proof sah, dari
+`experiments/results/<run>/gas/p6-benchmark.json`. `ui-simulation.md` mengharuskan gas ditampilkan dari hasil P6 dan tidak
+dihitung ulang.
+
+- Server membacanya sekali saat start dari run P6 terbaru yang `gas.status` = `measured`, dan mencetak
+  `Gas reference (P6 run <id>): <angka>`. Tanpa run seperti itu server tetap jalan dan event tidak membawa `gasUsed`.
+- Hanya B4 yang punya `CredentialVerifier` di P6, sehingga hanya B4 yang menampilkan gas. A, SD, dan B1-B3 tidak.
+- Hanya verifikasi yang diterima membawa `gasUsed`. Penolakan di prasyarat atau di kontrak tidak, dan pada skenario dua
+  tahap hanya tahap pertama (yang diterima) yang membawanya.
+- UI menaruhnya di node Contract sebagai "Gas 251.374 · referensi P6" (bukan chip di edge, karena bukan payload).
+  Teks "referensi P6" selalu menyertai angkanya.
 
 ## Pemetaan penolakan
 
@@ -187,6 +202,50 @@ Skenario dua tahap (`replay-same-proof`, `replay-relabelled-challenge`) menjalan
 Node `contract` mewakili `IssuerRegistry` dan `CredentialVerifier`. Fungsi `rejectingNode` di
 `web/src/domain/verification.ts` dan tabel ini harus sama.
 
+## Format rekaman
+
+Rekaman adalah cadangan sidang bila simulation live bermasalah: aliran event dari run sungguhan yang disimpan ke berkas dan
+diputar ulang oleh UI tanpa server (`?mode=replay`). Ditulis oleh `pnpm record:simulation`
+(`scripts/record-simulation.ts`), dibaca oleh `web/src/domain/recording.ts`.
+
+`<out>/<scenarioId>.<configuration>.json` (bawaan `web/public/recordings/`):
+
+```ts
+interface Recording {
+  version: 1;
+  recordedAt: string; // ISO 8601
+  configuration: ConfigurationId;
+  scenario: Scenario; // dari GET /api/scenarios saat merekam
+  events: RunEvent[]; // persis yang dikirim aliran SSE, urut seq
+  summary: RunSummary; // isi pesan run.completed
+}
+```
+
+`<out>/index.json` mendaftar berkas, dan perekam menggabungkannya dengan yang sudah ada (entri skenario dan
+konfigurasi yang sama diganti):
+
+```ts
+interface RecordingIndex {
+  version: 1;
+  recordings: { file: string; scenarioId: string; configuration: ConfigurationId; recordedAt: string }[];
+}
+```
+
+Aturan:
+
+- **Hanya run yang selesai.** Aliran yang berhenti sebelum `run.completed` (misalnya run crash) tidak direkam; perekam
+  gagal dengan `RUN_INTERRUPTED`. Perekam menolak event dengan kunci di luar allowlist.
+- **Validasi saat dimuat.** UI menolak rekaman dengan versi lain, tanpa `summary`, dengan `seq` tidak naik, dengan
+  `runId` yang berbeda dari `summary.runId`, skenario yang tidak berlaku pada konfigurasinya, atau event berkunci non-publik.
+  Satu berkas rusak menggagalkan seluruh pemuatan dan UI menyebut berkasnya, supaya cadangan tidak diam-diam
+  kehilangan satu skenario.
+- **Pemutaran.** Event diputar dengan jeda aslinya, dibatasi 250 ms sampai 1,5 detik, lalu `summary` direkam. `runId`
+  diganti `replay-N`. Seperti server, satu putaran pada satu waktu. Tidak ada yang dihitung ulang, jadi gas, durasi, dan
+  hasil sama dengan saat direkam.
+- **Cakupan.** Hanya skenario dan konfigurasi yang direkam yang bisa dipilih. Halaman Issuer, Holder, dan Verifier tidak
+  tersedia di mode ini karena membutuhkan server.
+- UI selalu menampilkan "Rekaman cadangan, bukan simulation live" beserta tanggal rekaman terbaru.
+
 ## Allowlist data publik
 
 Kunci yang boleh ada di `RunEvent.data`: `credentialId`, `issuerId`, `issuerPublicKey`, `verifierId`, `challenge`,
@@ -197,13 +256,13 @@ IPK kredensial, tanda tangan issuer, witness. Daftar kunci yang sama ada di `PUB
 (`web/src/domain/run-event.ts`); server harus punya tes yang menolak event dengan kunci di luar daftar.
 
 Catatan: `GET /api/holder/credentials` dan `GET /api/issuer/credentials` memang membawa atribut kredensial. Itu isi
-wallet holder dan daftar terbitan issuer di demo lokal, bukan aliran event.
+wallet holder dan daftar terbitan issuer di simulation lokal, bukan aliran event.
 
-## Catatan sinkronisasi dengan ui-demo.md
+## Catatan sinkronisasi dengan ui-simulation.md
 
 Bagian ini mencatat yang berbeda atau baru, untuk diputuskan saat D10 disetujui.
 
-1. `reason` contoh `KEY_BINDING_INVALID` di `ui-demo.md` tidak ada di `RejectionReason`. Serangan holder di P5
+1. `reason` contoh `KEY_BINDING_INVALID` di `ui-simulation.md` tidak ada di `RejectionReason`. Serangan holder di P5
    berakhir `PROVE_FAILED`. Kontrak ini memakai nilai P5.
 2. Dua langkah baru: `preconditions.checked` dan `issuer.checked`. Tanpa keduanya node `contract` tidak punya
    aktivitas sebelum verifikasi, dan penolakan prasyarat tidak punya langkah untuk dinyalakan merah.
@@ -211,7 +270,7 @@ Bagian ini mencatat yang berbeda atau baru, untuk diputuskan saat D10 disetujui.
    threshold, lalu issuer, lalu challenge). Node yang menolak tetap benar untuk tiap `reason`.
 4. Pesan penutup `run.completed` dan `RunSummary` belum ada di sketsa; UI butuh akhir run yang tegas.
 5. `Scenario.applicableConfigurations`: serangan hanya didefinisikan untuk circuit B1-B4. Padanan SD (dan A) menunggu
-   keputusan titik desain 2 dan 3 di `ui-demo.md`. Sampai itu ada, UI menonaktifkan serangan untuk A dan SD.
+   keputusan titik desain 2 dan 3 di `ui-simulation.md`. Sampai itu ada, UI menonaktifkan serangan untuk A dan SD.
 6. Tiga endpoint baca tambahan (ditandai **+**) agar halaman issuer dan verifier bisa menampilkan state tanpa
    menyimpannya di klien.
 
@@ -231,4 +290,6 @@ Sisi server (U1), dengan proof sungguhan di mesin biasa:
 - Hasil run sama dengan hasil P5 untuk replay, relabel, dan tanda tangan.
 
 Sisi UI (sudah ada di `web/tests/`): reducer graf, playback langkah-per-langkah, 26 skenario mock terhadap ekspektasi
-katalog, allowlist, dan aturan lapisan.
+katalog, allowlist, validasi dan pemutaran rekaman, dan aturan lapisan. `web/tests/fixtures/recordings/` ditulis oleh
+kode perekam asli terhadap server Express dengan engine tiruan; ia menjaga format yang dipakai bersama oleh perekam dan
+validator (data uji, bukan run Groth16).

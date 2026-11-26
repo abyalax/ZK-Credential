@@ -1,9 +1,9 @@
 import type { CredentialView } from '@/domain';
 
-/** Synthetic credential used to illustrate what each configuration discloses (same values as the README demo). */
+/** Synthetic credential used to illustrate what each configuration discloses (same values as the README simulation). */
 export const SAMPLE_CREDENTIAL: CredentialView = {
   id: 'cred-sample',
-  issuerId: 'issuer-demo',
+  issuerId: 'issuer-simulation',
   holderPublicKey: '0x7c3d9a41e8b05f2c6d1a',
   studentNumber: '2210001',
   fullName: 'Test Student',

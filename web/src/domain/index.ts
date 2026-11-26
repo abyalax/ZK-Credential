@@ -15,6 +15,8 @@ export type {
   PublicSignalsView,
   VerifyInput,
 } from './proof';
+export type { Recording, RecordingIndex, RecordingIndexEntry, ReplayTiming } from './recording';
+export { DEFAULT_REPLAY_TIMING, parseRecording, parseRecordingIndex, RECORDING_VERSION, replayDelays } from './recording';
 export type { EventData, KnownStep, NodeId, RunEvent, RunSummary, StepStatus } from './run-event';
 export { hasOnlyPublicData, KNOWN_STEPS, NODE_IDS, orderBySeq, PUBLIC_DATA_KEYS } from './run-event';
 export type { ExpectedOutcome, Scenario, ScenarioCategory, ScenarioKind } from './scenario';

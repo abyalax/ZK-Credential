@@ -1,0 +1,173 @@
+{
+  "version": 1,
+  "recordedAt": "2026-11-26T08:00:00.000Z",
+  "configuration": "B4",
+  "scenario": {
+    "id": "replay-same-proof",
+    "title": "Accepted proof presented a second time",
+    "kind": "attack",
+    "category": "replay",
+    "openIn": [],
+    "fullReason": "CHALLENGE_ALREADY_USED",
+    "applicableConfigurations": ["B4"]
+  },
+  "events": [
+    {
+      "node": "issuer",
+      "step": "credential.issued",
+      "status": "completed",
+      "data": {
+        "credentialId": "00000000000000000000000000000003",
+        "issuerId": "issuer-1"
+      },
+      "runId": "r2",
+      "seq": 0,
+      "at": 1700000000000
+    },
+    {
+      "node": "verifier",
+      "step": "challenge.issued",
+      "status": "completed",
+      "data": {
+        "verifierId": "verifier-a",
+        "challenge": "00000000000000000000000000000000000000000000000000000000000004",
+        "expiresAt": 1700000300000
+      },
+      "runId": "r2",
+      "seq": 1,
+      "at": 1700000000000
+    },
+    {
+      "node": "holder",
+      "step": "witness.computed",
+      "status": "started",
+      "runId": "r2",
+      "seq": 2,
+      "at": 1700000000000
+    },
+    {
+      "node": "holder",
+      "step": "proof.generated",
+      "status": "started",
+      "runId": "r2",
+      "seq": 3,
+      "at": 1700000000000
+    },
+    {
+      "node": "holder",
+      "step": "witness.computed",
+      "status": "completed",
+      "runId": "r2",
+      "seq": 4,
+      "at": 1700000000000
+    },
+    {
+      "node": "holder",
+      "step": "proof.generated",
+      "status": "completed",
+      "durationMs": 0,
+      "data": {
+        "proofBytes": 245
+      },
+      "runId": "r2",
+      "seq": 5,
+      "at": 1700000000000
+    },
+    {
+      "node": "holder",
+      "step": "presentation.sent",
+      "status": "completed",
+      "data": {
+        "gpaThreshold": 300,
+        "verifierId": "verifier-a",
+        "challenge": "00000000000000000000000000000000000000000000000000000000000004",
+        "attributesRevealed": 0
+      },
+      "runId": "r2",
+      "seq": 6,
+      "at": 1700000000000
+    },
+    {
+      "node": "verifier",
+      "step": "preconditions.checked",
+      "status": "completed",
+      "runId": "r2",
+      "seq": 7,
+      "at": 1700000000000
+    },
+    {
+      "node": "contract",
+      "step": "issuer.checked",
+      "status": "completed",
+      "data": {
+        "issuerPublicKey": "1:2",
+        "issuerId": "issuer-1"
+      },
+      "runId": "r2",
+      "seq": 8,
+      "at": 1700000000000
+    },
+    {
+      "node": "contract",
+      "step": "proof.verified",
+      "status": "started",
+      "runId": "r2",
+      "seq": 9,
+      "at": 1700000000000
+    },
+    {
+      "node": "contract",
+      "step": "proof.verified",
+      "status": "completed",
+      "durationMs": 0,
+      "data": {
+        "gasUsed": 251374
+      },
+      "runId": "r2",
+      "seq": 10,
+      "at": 1700000000000
+    },
+    {
+      "node": "verifier",
+      "step": "challenge.consumed",
+      "status": "completed",
+      "runId": "r2",
+      "seq": 11,
+      "at": 1700000000000
+    },
+    {
+      "node": "holder",
+      "step": "presentation.sent",
+      "status": "completed",
+      "data": {
+        "gpaThreshold": 300,
+        "verifierId": "verifier-a",
+        "challenge": "00000000000000000000000000000000000000000000000000000000000004",
+        "attributesRevealed": 0
+      },
+      "runId": "r2",
+      "seq": 12,
+      "at": 1700000000000
+    },
+    {
+      "node": "verifier",
+      "step": "preconditions.checked",
+      "status": "rejected",
+      "reason": "CHALLENGE_ALREADY_USED",
+      "runId": "r2",
+      "seq": 13,
+      "at": 1700000000000
+    }
+  ],
+  "summary": {
+    "runId": "r2",
+    "configuration": "B4",
+    "scenarioId": "replay-same-proof",
+    "outcome": {
+      "accepted": false,
+      "stage": "verify",
+      "reason": "CHALLENGE_ALREADY_USED"
+    },
+    "totalMs": 0
+  }
+}

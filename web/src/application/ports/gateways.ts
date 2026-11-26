@@ -62,5 +62,7 @@ export interface Container {
   readonly holder: HolderGateway;
   readonly verifier: VerifierGateway;
   readonly runs: RunGateway;
-  readonly mode: 'mock' | 'http';
+  readonly mode: 'mock' | 'http' | 'replay';
+  /** Replay mode only: ISO date of the newest recording shown, so the UI can say when it was recorded. */
+  readonly recordedAt?: string;
 }

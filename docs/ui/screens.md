@@ -6,7 +6,7 @@ nilai yang tidak pernah meninggalkan holder tampil sebagai blok hitam, nilai yan
 
 ## Navigasi
 
-Routing hash tanpa pustaka tambahan, supaya demo bisa disajikan sebagai halaman statis.
+Routing hash tanpa pustaka tambahan, supaya simulation bisa disajikan sebagai halaman statis.
 
 | Hash          | Halaman   | Mode                      |
 | ------------- | --------- | ------------------------- |
@@ -75,6 +75,26 @@ Node: ikon peran, nama, keterangan satu baris, langkah terakhir dengan durasi, d
 penjelasannya bila merah. Edge: label payload dan chip nilai publik. Detail graf ada di
 [architecture.md](architecture.md).
 
+## Gas di node Contract
+
+Setelah verifikasi yang diterima, node Contract menampilkan "Gas 251.374 · referensi P6" (angka bergantung pada hasil P6
+terbaru). Ini angka `estimateGas` dari benchmark, bukan pengukuran run itu, dan hanya ada di B4. Tidak ada gas pada
+konfigurasi lain, pada penolakan, atau bila server tidak menemukan run P6 dengan gas. Rincian:
+[contract.md](contract.md#gas-referensi-p6).
+
+## Mode rekaman
+
+`?mode=replay` memutar ulang rekaman run sungguhan tanpa server, untuk dipakai bila simulation live bermasalah.
+
+- Yang tampil sama dengan simulation live: graf, log, spanduk hasil, gas. Yang berbeda: hanya skenario dan konfigurasi yang
+  direkam yang bisa dipilih, tab Bandingkan nonaktif, dan tombol Issuer, Holder, Verifier tidak ada (halaman itu
+  membutuhkan server; membuka `#/issuer` tetap menampilkan Simulator).
+- Banner amber "Rekaman cadangan, bukan simulation live" dengan tanggal rekaman terbaru selalu tampil, dengan tautan "Kembali ke
+  server live".
+- Di mode live ada tautan "Simulation live bermasalah? Buka rekaman cadangan" di dasar halaman, jadi peralihan satu klik.
+- Bila rekaman belum ada atau rusak, layar "Simulation tidak bisa dimulai" menjelaskan cara merekam dan menawarkan mode live atau
+  mock.
+
 ## Keadaan
 
 | Keadaan         | Tampilan                                                                                             |
@@ -85,8 +105,9 @@ penjelasannya bila merah. Edge: label payload dan chip nilai publik. Detail graf
 | Galat server    | Pesan kode galat; tidak ada permintaan maaf                                                          |
 | Aliran terputus | Spanduk "Run gagal" dengan `STREAM_INTERRUPTED`                                                      |
 | Mode mock       | Banner kuning di dasar halaman, selalu tampil                                                        |
+| Mode rekaman    | Banner amber \"Rekaman cadangan, bukan simulation live\" dengan tanggal rekaman                            |
 
-Batasan demo (proof di server, event hanya data publik, tanpa autentikasi, trusted setup lokal, satu simulasi sekali
+Batasan simulation (proof di server, event hanya data publik, tanpa autentikasi, trusted setup lokal, satu simulasi sekali
 waktu) tampil di dasar setiap halaman sebagai bagian yang dapat dibuka.
 
 ## Teks antarmuka
@@ -125,6 +146,8 @@ untuk antarmuka, monospace sistem hanya untuk hash dan kode alasan. Rasio kontra
 
 ## Belum tercakup
 
-- Cadangan rekaman layar untuk sidang (tahap U4 di `ui-demo.md`).
-- Tampilan gas dari hasil P6 pada node Contract (event `proof.verified` sudah boleh membawa `gasUsed`, UI belum menampilkannya).
+- Rekaman layar (video) sidang. Cadangan yang ada adalah rekaman event yang diputar ulang UI (lihat "Mode rekaman"); video
+  layar harus dibuat manual.
+- Rekaman run sungguhan itu sendiri: berkas di `web/public/recordings/` baru ada setelah `pnpm record:simulation` dijalankan
+  terhadap server yang hidup.
 - Padanan serangan untuk A dan SD (lihat catatan sinkronisasi nomor 5 di [contract.md](contract.md)).

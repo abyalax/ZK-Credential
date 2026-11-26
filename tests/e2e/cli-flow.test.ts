@@ -13,7 +13,7 @@ import { createContainer, loadConfig } from '../../src/interfaces/composition/in
 import { startLocalChain } from '../chain/support/local-chain.js';
 
 /**
- * P7: the whole demo through the CLI against the in-process Hardhat chain, with real Groth16
+ * P7: the whole simulation through the CLI against the in-process Hardhat chain, with real Groth16
  * proofs. Needs `pnpm setup:zk full`, `pnpm chain:sync` and `pnpm chain:build` (`pnpm test:e2e`).
  */
 

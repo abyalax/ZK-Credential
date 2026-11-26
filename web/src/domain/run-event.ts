@@ -4,7 +4,7 @@ import type { Outcome } from './verification';
 export const NODE_IDS = ['issuer', 'holder', 'verifier', 'contract'] as const;
 export type NodeId = (typeof NODE_IDS)[number];
 
-/** `preconditions.checked` and `issuer.checked` are proposed additions to ui-demo.md (see docs/ui/contract.md). */
+/** `preconditions.checked` and `issuer.checked` are proposed additions to ui-simulation.md (see docs/ui/contract.md). */
 export const KNOWN_STEPS = [
   'credential.issued',
   'challenge.issued',

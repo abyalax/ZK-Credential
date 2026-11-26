@@ -71,7 +71,7 @@ Public signal order is the declaration order in the template (outputs first; non
   `LessEqThan` against 400 close that, and `circuits/tests/gpa-threshold.test.ts` fails if they are removed.
 - The circuit bound `400` must match `GPA_MAX` in `src/domain/credential/gpa.ts`; a test enforces it.
 - **Known gap by design:** nothing ties the proof to an issuer, a holder, a challenge or a verifier.
-  `tests/zk/proof-engine.test.ts` demonstrates it ("known gap" tests) and the `issuer`, `holder` and
+  `tests/zk/proof-engine.test.ts` simulationnstrates it ("known gap" tests) and the `issuer`, `holder` and
   `full` variants exist to close it.
 
 ### `issuer` (implemented, P1 ablation)

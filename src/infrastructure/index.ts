@@ -1,3 +1,4 @@
+export * from './benchmark-results/index.js';
 export * from './chain/index.js';
 export * from './cryptography/index.js';
 export * from './key-management/index.js';

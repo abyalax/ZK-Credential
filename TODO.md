@@ -154,7 +154,7 @@
 ## P7 - CLI, Reproducibility, CI
 
 - [x] Perintah CLI: `issue`, `challenge`, `prove`, `verify`, `bench` (plus `keygen` dan `register-issuer`); state di `.zk-state/` lewat file store
-- [x] README: quickstart end-to-end satu skenario demo
+- [x] README: quickstart end-to-end satu skenario simulation
 - [x] e2e test di `tests/e2e/` (`pnpm test:e2e`): CLI → chain lokal in-process → hasil. Belum dijalankan di sandbox karena `setup:zk` melewati batas waktu; jalankan di mesin biasa
 - [x] GitHub Actions (`.github/workflows/ci.yml`): `pnpm check` dan job terpisah untuk test ZK
 - [ ] Tag rilis untuk membekukan hasil eksperimen (manual: `git tag -a v0.1.0-results -m "P5/P6 results" && git push origin v0.1.0-results`)
@@ -185,11 +185,11 @@ Prioritas sedang:
 - [x] Pertimbangkan ceremony ptau multi-kontributor (dijelaskan sebagai batasan di `threats-to-validity.md`) agar klaim kunci tidak bisa dipertanyakan
 - [ ] Tag rilis untuk membekukan hasil eksperimen (lihat item terbuka di P7)
 
-Kondisional (hanya bila dosen atau penguji meminta demo):
+Kondisional (hanya bila dosen atau penguji meminta simulation):
 
 - [x] Adapter Express tipis di atas use case yang ada, store tetap lewat port (U1, lihat `docs/ui/server.md`; B4 saja, `pnpm test:e2e` dengan proof sungguhan belum dijalankan)
 - [ ] Store berbasis database sebagai pengganti file store `.zk-state/` (juga menutup celah atomicity `markConsumed` antar-proses di `threats-to-validity.md`)
-- [ ] Frontend minimal untuk demo, hanya bila diminta secara eksplisit
+- [ ] Frontend minimal untuk simulation, hanya bila diminta secara eksplisit
 
 Notes:
 

@@ -24,7 +24,7 @@ pnpm experiment:p5      # runs P5 attack-scenario experiments (generates JSON/CS
 pnpm cli help
 ```
 
-## Quickstart: one end-to-end demo
+## Quickstart: one end-to-end simulation
 
 Local research setup only: the Hardhat dev key and the trusted setup below are not for real use.
 

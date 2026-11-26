@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "recordings": [
+    {
+      "file": "replay-same-proof.B4.json",
+      "scenarioId": "replay-same-proof",
+      "configuration": "B4",
+      "recordedAt": "2026-11-26T08:00:00.000Z"
+    },
+    {
+      "file": "valid-accepted.B4.json",
+      "scenarioId": "valid-accepted",
+      "configuration": "B4",
+      "recordedAt": "2026-11-26T08:00:00.000Z"
+    }
+  ]
+}

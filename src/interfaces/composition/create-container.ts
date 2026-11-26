@@ -46,11 +46,13 @@ export interface ContainerOverrides {
   /** Persistent stores for the CLI; default to in-memory. */
   readonly credentials?: CredentialRepository;
   readonly challenges?: ChallengeStore;
-  /** Holder key source for the HTTP demo server; defaults to a key that lives only in memory. */
+  /** Holder key source for the HTTP simulation server; defaults to a key that lives only in memory. */
   readonly holderKeyring?: HolderKeyring;
   /** Injected chain clients (e.g. the in-process Hardhat network in e2e tests). */
   readonly publicClient?: PublicClient;
   readonly walletClient?: WalletClient;
+  /** P6 reference gas shown by the simulation on accepted verifications (see `loadP6GasReference`). */
+  readonly verifyCredentialGas?: number;
 }
 
 interface UseCaseParts {
@@ -63,11 +65,13 @@ interface UseCaseParts {
   readonly holderKeyring: HolderKeyring;
   readonly clock: Clock;
   readonly randomness: Randomness;
+  readonly verifyCredentialGas?: number;
 }
 
 /** Binds the use cases to their ports. Pure wiring: it opens no connection and reads no file. */
 const wireUseCases = (parts: UseCaseParts) => {
   const { issuer, issuers, signer, proofEngine, credentials, challenges, holderKeyring, clock, randomness } = parts;
+  const { verifyCredentialGas } = parts;
   const issueCredential = makeIssueCredential({ credentials, issuers, signer, clock, randomness });
   const issueChallenge = makeIssueChallenge({ challenges, clock, randomness });
   const generateProof = makeGenerateProof({ credentials, proofEngine });
@@ -92,6 +96,7 @@ const wireUseCases = (parts: UseCaseParts) => {
       issueChallenge,
       generateProof,
       verifyCredential,
+      ...(verifyCredentialGas === undefined ? {} : { verifyCredentialGas }),
     }),
   };
 };
@@ -138,6 +143,7 @@ export const createContainer = async (config: AppConfig, overrides: ContainerOve
     holderKeyring: overrides.holderKeyring ?? createInMemoryHolderKeyring(),
     clock: systemClock,
     randomness: cryptoRandomness,
+    ...(overrides.verifyCredentialGas === undefined ? {} : { verifyCredentialGas: overrides.verifyCredentialGas }),
   });
 
   return {

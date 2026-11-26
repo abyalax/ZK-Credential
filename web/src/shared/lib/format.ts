@@ -6,6 +6,9 @@ export const parseGpa = (text: string): number | undefined => {
   return Number.isFinite(value) ? Math.round(value * 100) : undefined;
 };
 
+/** Gas with a thousands separator, e.g. `251.374`. */
+export const formatGas = (gas: number): string => new Intl.NumberFormat('id-ID').format(gas);
+
 export const formatMs = (ms: number): string => (ms >= 1000 ? `${(ms / 1000).toFixed(2)} s` : `${Math.round(ms)} ms`);
 
 export const shorten = (value: string, head = 8, tail = 6): string =>

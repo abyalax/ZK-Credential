@@ -54,3 +54,18 @@ describe('mock run scripts', () => {
     expect(accepted).toEqual(['B1', 'B2', 'B3']);
   });
 });
+
+describe('mock gas reference', () => {
+  const gasOf = (id: 'B1' | 'B2' | 'B3' | 'B4' | 'A' | 'SD') => {
+    const scenario = MOCK_SCENARIOS.find((item) => item.id === 'valid-accepted');
+    if (!scenario) throw new Error('missing scenario');
+    return buildRunScript(id, scenario).events.flatMap(({ event }) =>
+      typeof event.data?.gasUsed === 'number' ? [event.data.gasUsed] : [],
+    );
+  };
+
+  it('shows the P6 gas on B4 only, where an on-chain verifier exists', () => {
+    expect(gasOf('B4')).toEqual([251_374]);
+    expect([...gasOf('A'), ...gasOf('SD'), ...gasOf('B1'), ...gasOf('B2'), ...gasOf('B3')]).toEqual([]);
+  });
+});

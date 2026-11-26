@@ -10,7 +10,7 @@ const freshKeys = async (): Promise<HolderKeys> => {
   return { publicKey: pair.publicKey, privateKey: pair.privateKey };
 };
 
-/** Keeps the demo holder key in memory only; a restart creates a new holder. */
+/** Keeps the simulation holder key in memory only; a restart creates a new holder. */
 export const createInMemoryHolderKeyring = (): HolderKeyring => {
   let current: Promise<HolderKeys> | undefined;
   return {
@@ -28,7 +28,7 @@ interface StoredKeys {
 }
 
 /**
- * Keeps the demo holder key in one JSON file with the same shape as the CLI's `holder.json`, so the
+ * Keeps the simulation holder key in one JSON file with the same shape as the CLI's `holder.json`, so the
  * CLI and the HTTP server act as the same holder. Local research use only: the key is stored unencrypted.
  */
 export const createFileHolderKeyring = (path: string): HolderKeyring => {

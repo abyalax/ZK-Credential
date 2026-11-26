@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { RunSummary } from '../../../src/application/index.js';
 import { createApp, type HttpServices } from '../../../src/interfaces/http/index.js';
 import type { buildOpenApiDocument } from '../../../src/interfaces/http/openapi/document.js';
-import { createDemoServices } from '../../support/demo-services.js';
+import { createSimulationServices } from '../../support/simulation-services.js';
 
 interface Harness {
   readonly base: string;
@@ -33,7 +33,7 @@ const start = async (services: HttpServices): Promise<Harness> => {
 
 let harness: Harness;
 beforeEach(async () => {
-  harness = await start(createDemoServices().services);
+  harness = await start(createSimulationServices().services);
 });
 afterEach(async () => {
   await harness.close();
@@ -284,7 +284,7 @@ describe('one run at a time', () => {
     const gate = new Promise<void>((resolve) => {
       release = resolve;
     });
-    const { services } = createDemoServices();
+    const { services } = createSimulationServices();
     const slow = await start({
       ...services,
       runScenario: async (input) => {
@@ -314,7 +314,7 @@ describe('one run at a time', () => {
   });
 
   it('closes the stream without run.completed when a run crashes', async () => {
-    const { services } = createDemoServices();
+    const { services } = createSimulationServices();
     const crashing = await start({
       ...services,
       runScenario: async () => {
@@ -340,7 +340,7 @@ describe('one run at a time', () => {
 
 describe('error handling and access', () => {
   it('maps unexpected failures to 500 without leaking the message', async () => {
-    const { services } = createDemoServices();
+    const { services } = createSimulationServices();
     const broken = await start({
       ...services,
       listCredentials: async () => {

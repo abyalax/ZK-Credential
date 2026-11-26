@@ -2,7 +2,7 @@ import type { ConfigurationId, NodeId, Outcome, RunEvent, Scenario, StepStatus }
 import { expectedOutcome, usesCircuit } from '@/domain';
 
 /**
- * MOCK ONLY: scripted events for developing the UI without the demo server. Durations are made up,
+ * MOCK ONLY: scripted events for developing the UI without the simulation server. Durations are made up,
  * and rejection reasons are those of the full variant. Real runs come from `GET /api/runs/:id/events`.
  */
 export type ScriptedEvent = {
@@ -65,23 +65,30 @@ const proving = (configuration: ConfigurationId, outcome: Outcome): ScriptedEven
   ];
 };
 
-const checking = (outcome: Outcome): ScriptedEvent[] => {
+/** P6 `estimateGas` of `verifyCredential` (run 2026-11-22-081902). Only B4 has an on-chain verifier, so only B4 shows gas. */
+const P6_B4_GAS = 251_374;
+
+const checking = (outcome: Outcome, gasUsed?: number): ScriptedEvent[] => {
   const reason = outcome.reason;
   if (PRECONDITION_REASONS.includes(reason)) return [step('verifier', 'preconditions.checked', 'rejected', { reason })];
   const pre = step('verifier', 'preconditions.checked', 'completed');
   if (reason === 'ISSUER_NOT_REGISTERED') return [pre, step('contract', 'issuer.checked', 'rejected', { reason })];
-  const issuer = step('contract', 'issuer.checked', 'completed', { data: { issuerId: 'issuer-demo' } });
+  const issuer = step('contract', 'issuer.checked', 'completed', { data: { issuerId: 'issuer-simulation' } });
   if (reason === 'PROOF_INVALID') return [pre, issuer, step('contract', 'proof.verified', 'rejected', { reason })];
   return [
     pre,
     issuer,
     step('contract', 'proof.verified', 'started'),
-    step('contract', 'proof.verified', 'completed', { durationMs: 40, delayMs: 40 }),
+    step('contract', 'proof.verified', 'completed', {
+      durationMs: 40,
+      delayMs: 40,
+      ...(gasUsed === undefined ? {} : { data: { gasUsed } }),
+    }),
   ];
 };
 
 const verifying = (configuration: ConfigurationId, outcome: Outcome): ScriptedEvent[] => {
-  if (usesCircuit(configuration)) return checking(outcome);
+  if (usesCircuit(configuration)) return checking(outcome, configuration === 'B4' ? P6_B4_GAS : undefined);
   return [step('verifier', 'proof.verified', 'completed', { durationMs: 8 })];
 };
 
@@ -101,7 +108,7 @@ const round = (configuration: ConfigurationId, outcome: Outcome): ScriptedEvent[
 export const buildRunScript = (configuration: ConfigurationId, scenario: Scenario): RunScript => {
   const outcome = decideOutcome(configuration, scenario);
   const setup: ScriptedEvent[] = [
-    step('issuer', 'credential.issued', 'completed', { data: { credentialId: 'cred-demo', issuerId: 'issuer-demo' } }),
+    step('issuer', 'credential.issued', 'completed', { data: { credentialId: 'cred-simulation', issuerId: 'issuer-simulation' } }),
     ...(configuration === 'A'
       ? []
       : [step('verifier', 'challenge.issued', 'completed', { data: { verifierId: 'verifier-a', challenge: CHALLENGE } })]),

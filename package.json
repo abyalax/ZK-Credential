@@ -11,6 +11,8 @@
   "scripts": {
     "cli": "tsx src/interfaces/cli/main.ts",
     "serve": "tsx src/interfaces/http/main.ts",
+    "client": "cd web && pnpm dev",
+    "record:demo": "tsx scripts/record-demo.ts",
     "generate:issuer-key": "tsx scripts/generate-issuer-key.ts",
     "typecheck": "tsc --noEmit",
     "typecheck:contracts": "tsc -p contracts/tsconfig.json --noEmit",
