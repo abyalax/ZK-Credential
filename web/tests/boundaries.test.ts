@@ -25,7 +25,6 @@ const importsOf = (file: string): string[] =>
 
 const targetLayer = (spec: string): string | undefined => {
   if (spec.startsWith('@/')) return spec.slice(2).split('/')[0];
-  return;
 };
 
 describe('web layer dependency rule', () => {

@@ -264,6 +264,9 @@ importers:
         specifier: 1.4.0
         version: 1.4.0
     devDependencies:
+      '@biomejs/biome':
+        specifier: 2.6.8
+        version: 2.6.8
       '@tailwindcss/vite':
         specifier: 4.3.5
         version: 4.3.5(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))

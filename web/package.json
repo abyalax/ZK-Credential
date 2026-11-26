@@ -12,7 +12,9 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint": "biome check .",
+    "format": "biome check --write ."
   },
   "dependencies": {
     "@fontsource-variable/schibsted-grotesk": "5.3.0",
@@ -30,6 +32,7 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "4.3.5",
+    "@biomejs/biome": "2.6.8",
     "@types/node": "26.6.6",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",

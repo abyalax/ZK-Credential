@@ -27,9 +27,7 @@ const parsePasted = (text: string): ProofView | undefined => {
   try {
     const value = JSON.parse(text) as Partial<ProofView>;
     return value.payload && value.publicSignals ? (value as ProofView) : undefined;
-  } catch {
-    return;
-  }
+  } catch {}
 };
 
 export const verifyAtom = atom(null, async (get, set) => {

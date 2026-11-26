@@ -1,19 +1,20 @@
-
 [CmdletBinding()]
 param(
     [ValidateSet("Full", "Changed", "Staged", "Folder")]
     [string]$Mode = "Full",
 
-    [switch]$ShowLog,                    # Legacy switch; scanner output remains suppressed
-    [switch]$VerboseScanner,             # Enable scanner debug output
+    [switch]$ShowLog,                    # Stream scanner output live
+    [switch]$VerboseScanner,             # Enable scanner debug output (-X) and stream it
 
     [string]$Path = ".",                 # Used in Folder mode
     [string]$BaseRef = "HEAD",           # Comparison reference in Changed mode
     [string]$ProjectKey = "",            # Default: SONAR_PROJECT_KEY in .env
     [string[]]$Extensions = @("ts", "tsx"),
 
-    [string]$SonarUrl = "",  # Existing SonarQube server URL (skip Docker if set, e.g., http://localhost:9000)
+    [string]$SonarUrl = "",              # Existing SonarQube server URL (skips Docker)
     [string]$SonarImage = "sonarqube:lts-community",
+    [string]$NodePath = "",              # Optional Node.js executable for the JS/TS analyzer
+    [string]$AdminPassword = "",         # Default: SONAR_ADMIN_PASSWORD in .env, else built-in
     [int]$StartupTimeoutSeconds = 600,
     [int]$TaskTimeoutSeconds = 900
 )
@@ -24,19 +25,32 @@ $ErrorActionPreference = "Stop"
 
 $containerName = "sonar-ephemeral-$([guid]::NewGuid().ToString('N').Substring(0, 8))"
 $containerStarted = $false
+$wslKeepAlive = $null
 $tokenName = $null
 $sonarToken = $null
+$tokenGenerated = $false
+$adminHeaders = $null
 $tokenHeaders = $null
 $hostUrl = $null
-$tmp = $null
 $exitCode = 0
-$skipAnalysis = $false
-$containerLogs = $null
 
 $previousSonarToken = $env:SONAR_TOKEN
 $sonarTokenWasSet = Test-Path Env:SONAR_TOKEN
+$previousScannerOpts = $env:SONAR_SCANNER_OPTS
+
+$clock = [System.Diagnostics.Stopwatch]::StartNew()
 
 # Helper functions
+
+function Get-Elapsed {
+    $t = $clock.Elapsed
+    return ("{0:00}:{1:00}" -f [int][Math]::Floor($t.TotalMinutes), $t.Seconds)
+}
+
+function Write-Timing {
+    param([string]$Label)
+    Write-Host "  [$(Get-Elapsed)] $Label" -ForegroundColor DarkGray
+}
 
 function Invoke-WslDocker {
     param(
@@ -52,6 +66,34 @@ function Invoke-WslDocker {
     }
 
     return ($output | Out-String).Trim()
+}
+
+function Assert-ContainerRunning {
+    param(
+        [Parameter(Mandatory)][string]$Name,
+        [string]$Context = "unknown stage"
+    )
+
+    $running = $null
+
+    try {
+        $running = Invoke-WslDocker @(
+            "inspect", "-f", "{{.State.Running}}", $Name
+        )
+    }
+    catch {
+        throw "SonarQube container is no longer available ($Context)."
+    }
+
+    if ($running -notmatch "true") {
+        $logs = ""
+        try {
+            $logs = Invoke-WslDocker @("logs", "--tail", "100", $Name)
+        }
+        catch { }
+
+        throw "SonarQube container stopped unexpectedly ($Context).`nLogs:`n$logs"
+    }
 }
 
 function Set-WslSysctl {
@@ -84,20 +126,6 @@ function New-BasicAuthHeader {
     }
 }
 
-function New-TemporaryPassword {
-    $bytes = New-Object byte[] 24
-    $rng = [Security.Cryptography.RandomNumberGenerator]::Create()
-
-    try {
-        $rng.GetBytes($bytes)
-    }
-    finally {
-        $rng.Dispose()
-    }
-
-    return [BitConverter]::ToString($bytes).Replace("-", "")
-}
-
 function Get-AvailablePort {
     $listener = [System.Net.Sockets.TcpListener]::new(
         [Net.IPAddress]::Loopback, 0
@@ -109,6 +137,331 @@ function Get-AvailablePort {
     }
     finally {
         $listener.Stop()
+    }
+}
+
+function Get-WslIpAddresses {
+    try {
+        $out = & wsl.exe hostname -I 2>$null
+        return @(
+            ($out | Out-String) -split '\s+' |
+                Where-Object { $_ -match '^\d{1,3}(\.\d{1,3}){3}$' }
+        )
+    }
+    catch {
+        return @()
+    }
+}
+
+function Find-ReachableEndpoint {
+    param(
+        [Parameter(Mandatory)][int]$Port,
+        [string[]]$ExtraHosts = @()
+    )
+
+    # IP literals only: avoids IPv4/IPv6 resolution differences.
+    $candidates = @("http://127.0.0.1:$Port") +
+                  @($ExtraHosts | ForEach-Object { "http://${_}:$Port" }) +
+                  @("http://[::1]:$Port")
+
+    foreach ($candidate in $candidates) {
+        try {
+            $null = Invoke-RestMethod -Uri "$candidate/api/system/status" -TimeoutSec 3
+            return $candidate
+        }
+        catch { }
+    }
+
+    return $null
+}
+
+function Start-WslKeepAlive {
+    # WSL2 stops the distro (including dockerd and every container in it)
+    # shortly after the last wsl.exe session ends. Hold one session open
+    # for the entire run.
+    $process = Start-Process -FilePath "wsl.exe" `
+        -ArgumentList @("--exec", "sleep", "infinity") `
+        -WindowStyle Hidden -PassThru
+
+    Start-Sleep -Milliseconds 500
+
+    if ($process.HasExited) {
+        throw "Failed to start the WSL keep-alive session (exit code $($process.ExitCode))."
+    }
+
+    return $process
+}
+
+function Stop-WslKeepAlive {
+    param($Process)
+
+    if ($Process -and -not $Process.HasExited) {
+        try { Stop-Process -Id $Process.Id -Force -ErrorAction SilentlyContinue }
+        catch { }
+    }
+}
+
+function Get-AnalysisScope {
+    $extPattern = "\.(" + ($Extensions -join "|") + ")$"
+
+    $scope = @{
+        Skip       = $false
+        Key        = $ProjectKey
+        Sources    = "."
+        Inclusions = (($Extensions | ForEach-Object { "**/*.$_" }) -join ",")
+    }
+
+    switch ($Mode) {
+        "Full" {
+            Write-Host "Analysis mode: Full"
+        }
+
+        "Folder" {
+            if (-not (Test-Path $Path)) {
+                throw "Folder not found: $Path"
+            }
+
+            $scope.Sources = ((Resolve-Path -Relative $Path) -replace "\\", "/")
+            $scope.Key = "$ProjectKey-partial"
+
+            Write-Host "Analysis mode: Folder"
+            Write-Host "Target: $($scope.Sources)"
+        }
+
+        { $_ -in "Changed", "Staged" } {
+            Write-Host "Analysis mode: $Mode"
+
+            if ($Mode -eq "Staged") {
+                $list = git diff --cached --name-only --diff-filter=ACMR
+            }
+            else {
+                $tracked = git diff --name-only --diff-filter=ACMR $BaseRef
+                $untracked = git ls-files --others --exclude-standard
+
+                $list = @($tracked) + @($untracked)
+            }
+
+            $files = @(
+                $list |
+                    Where-Object { $_ -match $extPattern } |
+                    Sort-Object -Unique
+            )
+
+            if ($files.Count -eq 0) {
+                Write-Host "No matching files found. Analysis skipped." `
+                    -ForegroundColor Yellow
+
+                $scope.Skip = $true
+                return $scope
+            }
+
+            $files | ForEach-Object { Write-Host "  $_" }
+
+            $scope.Inclusions = ($files -replace "\\", "/") -join ","
+            $scope.Key = "$ProjectKey-partial"
+        }
+    }
+
+    return $scope
+}
+
+function Invoke-SonarAnalysis {
+    param(
+        [Parameter(Mandatory)][hashtable]$Scope
+    )
+
+    $props = @(
+        "sonar.projectKey=$($Scope.Key)"
+        "sonar.host.url=$hostUrl"
+        "sonar.login=$sonarToken"
+        "sonar.sources=$($Scope.Sources)"
+        "sonar.inclusions=$($Scope.Inclusions)"
+        "sonar.exclusions=$exclusions"
+        "sonar.scm.disabled=true"
+        "sonar.sourceEncoding=UTF-8"
+        "sonar.javascript.environments=browser,node"
+        "sonar.javascript.node.maxspace=4096"
+    )
+
+    if ($NodePath) {
+        $props += "sonar.nodejs.executable=$($NodePath -replace '\\', '/')"
+    }
+
+    $propsFile = [IO.Path]::GetTempFileName()
+    $report = Join-Path (Get-Location) ".scannerwork\report-task.txt"
+
+    try {
+        Set-Content -Path $propsFile -Value $props -Encoding ASCII
+
+        if (Test-Path $report) {
+            Remove-Item $report -Force
+        }
+
+        # ------------------------------------------------
+        # Run scanner
+        # ------------------------------------------------
+
+        Write-Host "`n[5/7] Running SonarScanner..." -ForegroundColor Cyan
+
+        $scannerArgs = @("-Dproject.settings=$propsFile")
+
+        if ($VerboseScanner) {
+            $scannerArgs += "-X"
+        }
+
+        $streamOutput = $VerboseScanner -or $ShowLog
+        $scannerLines = [System.Collections.Generic.List[string]]::new()
+
+        # Native stderr + $ErrorActionPreference=Stop would turn scanner
+        # warnings into terminating errors in Windows PowerShell 5.1.
+        $previousEap = $ErrorActionPreference
+        $ErrorActionPreference = "Continue"
+
+        try {
+            & sonar-scanner @scannerArgs 2>&1 | ForEach-Object {
+                $line = "$_"
+                $scannerLines.Add($line)
+
+                if ($streamOutput) {
+                    Write-Host $line
+                }
+            }
+
+            $scannerCode = $LASTEXITCODE
+        }
+        finally {
+            $ErrorActionPreference = $previousEap
+        }
+
+        if ($scannerCode -ne 0) {
+            $scannerLog = Join-Path ([IO.Path]::GetTempPath()) `
+                "sonar-scanner-$([guid]::NewGuid().ToString('N').Substring(0, 8)).log"
+            Set-Content -Path $scannerLog -Value $scannerLines -Encoding UTF8
+
+            if (-not $streamOutput) {
+                Write-Host "`n--- SonarScanner output (last 40 lines, stack frames hidden) ---" `
+                    -ForegroundColor DarkYellow
+
+                $scannerLines |
+                    Where-Object {
+                        $_ -notmatch '^\s+at ' -and
+                        $_ -notmatch '^\s+\.\.\. \d+ (common frames omitted|more)$'
+                    } |
+                    Select-Object -Last 40 |
+                    ForEach-Object { Write-Host $_ }
+            }
+
+            Write-Host "`nFull scanner log: $scannerLog" -ForegroundColor DarkYellow
+
+            if ($containerStarted) {
+                Assert-ContainerRunning -Name $containerName -Context "while SonarScanner was running"
+            }
+
+            throw "SonarScanner failed (exit code $scannerCode). See the scanner output above."
+        }
+
+        Write-Host "Scanner execution completed successfully." -ForegroundColor Green
+        Write-Timing "scanner finished"
+
+        # ------------------------------------------------
+        # Wait for Compute Engine processing
+        # ------------------------------------------------
+
+        Write-Host "`n[6/7] Waiting for SonarQube processing..." -ForegroundColor Cyan
+
+        if (-not (Test-Path $report)) {
+            throw "SonarScanner completed but report-task.txt was not generated. The analysis may not have been submitted."
+        }
+
+        $reportProperties = @{}
+        Get-Content $report | ForEach-Object {
+            if ($_ -match '^([^=]+)=(.*)$') {
+                $reportProperties[$Matches[1]] = $Matches[2]
+            }
+        }
+
+        $ceTaskUrl = $reportProperties["ceTaskUrl"]
+        $ceTaskId = $reportProperties["ceTaskId"]
+        $dashboardUrl = $reportProperties["dashboardUrl"]
+
+        if (-not $ceTaskId -and $ceTaskUrl -match '[?&]id=([^&]+)') {
+            $ceTaskId = [Uri]::UnescapeDataString($Matches[1])
+        }
+
+        if (-not $ceTaskId) {
+            throw "Unable to locate ceTaskId in report-task.txt. The analysis may not have been submitted correctly."
+        }
+
+        if (-not $dashboardUrl) {
+            $dashboardUrl = "$hostUrl/dashboard?id=$($Scope.Key)"
+        }
+
+        $taskStatusUrl = "$hostUrl/api/ce/task?id=$([Uri]::EscapeDataString($ceTaskId))"
+        $deadline = (Get-Date).AddSeconds($TaskTimeoutSeconds)
+        $analysisCompleted = $false
+        $lastTaskStatus = "PENDING"
+        $lastPollError = $null
+
+        while ((Get-Date) -lt $deadline) {
+            try {
+                $ceResponse = Invoke-RestMethod `
+                    -Uri $taskStatusUrl `
+                    -Headers $tokenHeaders `
+                    -TimeoutSec 20
+
+                $lastTaskStatus = [string]$ceResponse.task.status
+                $lastPollError = $null
+
+                switch ($lastTaskStatus) {
+                    "SUCCESS" {
+                        $analysisCompleted = $true
+                    }
+                    "FAILED" {
+                        $errorMessage = $ceResponse.task.errorMessage
+                        if (-not $errorMessage) { $errorMessage = "No server error detail was provided." }
+                        throw "SonarQube server-side analysis failed: $errorMessage"
+                    }
+                    "CANCELED" {
+                        throw "SonarQube analysis was canceled."
+                    }
+                    default {
+                        Write-Verbose "Compute Engine task status: $lastTaskStatus"
+                    }
+                }
+            }
+            catch {
+                if ($_.Exception.Message -match 'server-side analysis failed|analysis was canceled') {
+                    throw
+                }
+                $lastPollError = $_.Exception.Message
+                Write-Verbose "Unable to read Compute Engine task status yet: $lastPollError"
+
+                if ($containerStarted) {
+                    Assert-ContainerRunning -Name $containerName -Context "Compute Engine processing"
+                }
+            }
+
+            if ($analysisCompleted) { break }
+            Start-Sleep -Seconds 1
+        }
+
+        if (-not $analysisCompleted) {
+            $timeoutDetail = "Timed out after $TaskTimeoutSeconds seconds waiting for Compute Engine task '$ceTaskId'. Last status: '$lastTaskStatus'."
+            if ($lastPollError) {
+                $timeoutDetail += " Last API error: $lastPollError"
+            }
+            throw $timeoutDetail
+        }
+
+        Write-Host "Analysis successfully processed by SonarQube." -ForegroundColor Green
+        Write-Timing "server-side processing finished"
+
+        return $dashboardUrl
+    }
+    finally {
+        if (Test-Path $propsFile) {
+            Remove-Item $propsFile -Force -ErrorAction SilentlyContinue
+        }
     }
 }
 
@@ -142,6 +495,9 @@ try {
         }
     }
 
+    # Token supplied by the environment/.env (only used with -SonarUrl).
+    $externalToken = $env:SONAR_TOKEN
+
     if (-not $ProjectKey) {
         $ProjectKey = if ($env:SONAR_PROJECT_KEY) {
             $env:SONAR_PROJECT_KEY
@@ -149,6 +505,20 @@ try {
         else {
             "ZK-Credential"
         }
+    }
+
+    # Admin password policy (SonarQube 9.9): >= 12 chars, mixed case, digit, symbol.
+    $explicitPassword = if ($AdminPassword) { $AdminPassword }
+                        elseif ($env:SONAR_ADMIN_PASSWORD) { $env:SONAR_ADMIN_PASSWORD }
+                        else { $null }
+
+    $resolvedAdminPassword = if ($explicitPassword) { $explicitPassword } else { "Zk-Credential#Local2026" }
+
+    # Password currently valid on the server. A fresh container starts with "admin".
+    $currentAdminPassword = "admin"
+
+    if ($SonarUrl -and $explicitPassword) {
+        $currentAdminPassword = $explicitPassword
     }
 
     # --------------------------------------------------------
@@ -159,75 +529,28 @@ try {
         throw "sonar-scanner was not found in PATH."
     }
 
+    if ($NodePath -and -not (Test-Path $NodePath)) {
+        throw "NodePath not found: $NodePath"
+    }
+
+    # Larger heap for the scanner JVM (this machine has plenty of RAM).
+    $env:SONAR_SCANNER_OPTS = "-Xmx3072m"
+
+    $exclusions = "**/node_modules/**,**/dist/**,**/build/**,**/coverage/**,**/*.d.ts," +
+                  "**/artifacts/**,**/cache/**,**/typechain-types/**,**/.next/**,**/out/**"
+
     # --------------------------------------------------------
     # Determine analysis scope
     # --------------------------------------------------------
 
-    $extPattern = "\.(" + ($Extensions -join "|") + ")$"
-    $exclusions = "**/node_modules/**,**/dist/**,**/build/**,**/coverage/**,**/*.d.ts"
-    $allGlobs = ($Extensions | ForEach-Object { "**/*.$_" }) -join ","
+    $scope = Get-AnalysisScope
 
-    $key = $ProjectKey
-    $sources = "."
-    $inclusions = $allGlobs
-
-    switch ($Mode) {
-        "Full" {
-            Write-Host "Analysis mode: Full"
-        }
-
-        "Folder" {
-            if (-not (Test-Path $Path)) {
-                throw "Folder not found: $Path"
-            }
-
-            $sources = ((Resolve-Path -Relative $Path) -replace "\\", "/")
-            $key = "$ProjectKey-partial"
-
-            Write-Host "Analysis mode: Folder"
-            Write-Host "Target: $sources"
-        }
-
-        { $_ -in "Changed", "Staged" } {
-            Write-Host "Analysis mode: $Mode"
-
-            if ($Mode -eq "Staged") {
-                $list = git diff --cached --name-only --diff-filter=ACMR
-            }
-            else {
-                $tracked = git diff --name-only --diff-filter=ACMR $BaseRef
-                $untracked = git ls-files --others --exclude-standard
-
-                $list = @($tracked) + @($untracked)
-            }
-
-            $files = @(
-                $list |
-                    Where-Object { $_ -match $extPattern } |
-                    Sort-Object -Unique
-            )
-
-            if ($files.Count -eq 0) {
-                Write-Host "No matching files found. Analysis skipped." `
-                    -ForegroundColor Yellow
-
-                $skipAnalysis = $true
-                break
-            }
-
-            $files | ForEach-Object {
-                Write-Host "  $_"
-            }
-
-            $sources = "."
-            $inclusions = ($files -replace "\\", "/") -join ","
-            $key = "$ProjectKey-partial"
-        }
+    if ($scope.Skip) {
+        Write-Host "`nAnalysis skipped - no files matched the criteria." `
+            -ForegroundColor Yellow
     }
-
-    if (-not $skipAnalysis) {
-
-        Write-Host "`nProject key: $key"
+    else {
+        Write-Host "`nProject key: $($scope.Key)"
         Write-Host "Extensions: $($Extensions -join ', ')"
 
         # ----------------------------------------------------
@@ -235,14 +558,12 @@ try {
         # ----------------------------------------------------
 
         if ($SonarUrl) {
-            $hostUrl = $SonarUrl
+            $hostUrl = $SonarUrl.TrimEnd("/")
             Write-Host "`nUsing existing SonarQube server: $hostUrl" -ForegroundColor Cyan
-            $containerStarted = $false
         }
         else {
-            # ----------------------------------------------------
-            # Validate Docker
-            # ----------------------------------------------------
+            # Keep WSL (and therefore Docker) alive for the whole run.
+            $wslKeepAlive = Start-WslKeepAlive
 
             Write-Host "`n[1/7] Checking WSL Docker..." -ForegroundColor Cyan
 
@@ -252,27 +573,19 @@ try {
 
             Write-Host "Docker Engine: $dockerVersion" -ForegroundColor Green
 
-            # ----------------------------------------------------
-            # Configure Elasticsearch requirements
-            # ----------------------------------------------------
-
             Write-Host "`n[2/7] Configuring WSL kernel..." -ForegroundColor Cyan
 
             Set-WslSysctl "vm.max_map_count=524288"
             Set-WslSysctl "fs.file-max=131072"
 
-            # ----------------------------------------------------
-            # Start temporary SonarQube
-            # ----------------------------------------------------
-
             Write-Host "`n[3/7] Starting SonarQube..." -ForegroundColor Cyan
 
             $port = Get-AvailablePort
-            $hostUrl = "http://localhost:$port"
 
             Write-Host "Image: $SonarImage"
-            Write-Host "Endpoint: $hostUrl"
+            Write-Host "Host port: $port"
 
+            # Larger heaps for Compute Engine (report processing) and web.
             Invoke-WslDocker @(
                 "run",
                 "-d",
@@ -280,67 +593,60 @@ try {
                 "-p", "0.0.0.0:$port`:9000",
                 "--ulimit", "nofile=131072:131072",
                 "--ulimit", "nproc=8192:8192",
+                "-e", "SONAR_CE_JAVAOPTS=-Xmx3g",
+                "-e", "SONAR_WEB_JAVAOPTS=-Xmx1g",
                 "--restart", "no",
                 $SonarImage
             ) | Out-Null
 
             $containerStarted = $true
-
-            # Capture initial logs for debugging
-            Start-Sleep -Seconds 2
-            try {
-                $containerLogs = Invoke-WslDocker @("logs", "--tail", "50", $containerName)
-            }
-            catch {
-                $containerLogs = "Unable to capture initial logs."
-            }
-
-            # ----------------------------------------------------
-            # Wait for server readiness
-            # ----------------------------------------------------
+            $wslIps = Get-WslIpAddresses
 
             Write-Host "Waiting for SonarQube initialization..."
 
+            $hostUrl = $null
             $deadline = (Get-Date).AddSeconds($StartupTimeoutSeconds)
             $serverReady = $false
-            $attempt = 0
+            $pollCount = 0
+            $lastState = ""
 
             while ((Get-Date) -lt $deadline) {
-                $attempt++
-                Write-Host "  Health check attempt $attempt..." -NoNewline
+                $pollCount++
+                $state = "NOT_READY"
 
-                try {
-                    $status = Invoke-RestMethod `
-                        -Uri "$hostUrl/api/system/status" `
-                        -TimeoutSec 5
-
-                    if ($status.status -eq "UP") {
-                        Write-Host " UP" -ForegroundColor Green
-                        $serverReady = $true
-                        break
-                    }
-                    else {
-                        Write-Host " $($status.status)"
-                    }
-                }
-                catch {
-                    Write-Host " Not ready yet"
+                if (-not $hostUrl) {
+                    $hostUrl = Find-ReachableEndpoint -Port $port -ExtraHosts $wslIps
                 }
 
-                Start-Sleep -Seconds 5
+                if ($hostUrl) {
+                    try {
+                        $status = Invoke-RestMethod `
+                            -Uri "$hostUrl/api/system/status" `
+                            -TimeoutSec 5
 
-                try {
-                    $running = Invoke-WslDocker @(
-                        "inspect", "-f", "{{.State.Running}}", $containerName
-                    )
+                        $state = [string]$status.status
 
-                    if ($running -notmatch "true") {
-                        $logs = Invoke-WslDocker @("logs", "--tail", "50", $containerName)
-                        throw "SonarQube container stopped unexpectedly.`nLogs:`n$logs"
+                        if ($state -eq "UP") {
+                            $serverReady = $true
+                        }
+                    }
+                    catch {
+                        $state = "NOT_READY"
+                        $hostUrl = $null    # re-resolve on the next poll
                     }
                 }
-                catch {
-                    throw "SonarQube container is no longer available."
+
+                if ($state -ne $lastState) {
+                    Write-Host "  [$(Get-Elapsed)] SonarQube status: $state"
+                    $lastState = $state
+                }
+
+                if ($serverReady) { break }
+
+                Start-Sleep -Seconds 2
+
+                if ($pollCount % 3 -eq 0) {
+                    Assert-ContainerRunning -Name $containerName -Context "startup"
                 }
             }
 
@@ -349,364 +655,193 @@ try {
                 throw "SonarQube startup timed out after $StartupTimeoutSeconds seconds.`nLogs:`n$logs"
             }
 
-            Write-Host "SonarQube is ready." -ForegroundColor Green
+            Write-Host "SonarQube is ready at $hostUrl" -ForegroundColor Green
 
-            # Additional wait for batch endpoint to be ready
-            Write-Host "Waiting for batch services..."
-            $batchReady = $false
-            $batchAttempts = 0
+            # Replace default admin/admin so SonarQube does not force a
+            # password change on first login in the browser.
+            Write-Host "Setting admin password..."
 
-            while ($batchAttempts -lt 30) {
-                $batchAttempts++
+            $passwordChanged = $false
+            $passwordAttempts = 0
+
+            while (-not $passwordChanged) {
+                $passwordAttempts++
                 try {
-                    $null = Invoke-RestMethod `
-                        -Uri "$hostUrl/api/server/version" `
-                        -TimeoutSec 5
-                    $batchReady = $true
-                    break
+                    Invoke-RestMethod `
+                        -Method Post `
+                        -Uri "$hostUrl/api/users/change_password" `
+                        -Headers (New-BasicAuthHeader "admin" "admin") `
+                        -Body @{
+                            login            = "admin"
+                            previousPassword = "admin"
+                            password         = $resolvedAdminPassword
+                        } `
+                        -TimeoutSec 15 | Out-Null
+
+                    $passwordChanged = $true
                 }
                 catch {
+                    if ($passwordAttempts -ge 10) {
+                        throw "Failed to set the admin password: $($_.Exception.Message) (check the password policy)"
+                    }
                     Start-Sleep -Seconds 2
                 }
             }
 
-            if (-not $batchReady) {
-                throw "SonarQube batch services not ready after 60 seconds."
-            }
-
-            Write-Host "SonarQube fully operational." -ForegroundColor Green
-
-            # Verify the API endpoints are ready before authentication
-            Write-Host "Verifying API endpoints..."
-            $apiReady = $false
-            $apiAttempts = 0
-            $maxApiAttempts = 60  # Increased to 2 minutes
-
-            while ($apiAttempts -lt $maxApiAttempts) {
-                $apiAttempts++
-                try {
-                    $null = Invoke-RestMethod `
-                        -Uri "$hostUrl/api/server/version" `
-                        -TimeoutSec 10
-                    $apiReady = $true
-                    break
-                }
-                catch {
-                    # Check if container is still running
-                    try {
-                        $running = Invoke-WslDocker @(
-                            "inspect", "-f", "{{.State.Running}}", $containerName
-                        )
-                        if ($running -notmatch "true") {
-                            $logs = Invoke-WslDocker @("logs", "--tail", "100", $containerName)
-                            throw "SonarQube container stopped unexpectedly during API verification.`nLogs:`n$logs"
-                        }
-                    }
-                    catch {
-                        throw "SonarQube container is no longer available during API verification."
-                    }
-
-                    Start-Sleep -Seconds 2
-                }
-            }
-
-            if (-not $apiReady) {
-                $logs = Invoke-WslDocker @("logs", "--tail", "100", $containerName)
-                throw "SonarQube API endpoints not ready after $($maxApiAttempts * 2) seconds.`nLogs:`n$logs"
-            }
-
-            Write-Host "API endpoints ready." -ForegroundColor Green
+            $currentAdminPassword = $resolvedAdminPassword
+            Write-Host "Admin password set." -ForegroundColor Green
         }
 
         # ----------------------------------------------------
-        # Bootstrap temporary authentication
-        # --------------------------------------------------------
+        # Authentication
+        # ----------------------------------------------------
 
-        Write-Host "`n[4/7] Initializing temporary authentication..." `
-            -ForegroundColor Cyan
+        Write-Host "`n[4/7] Initializing authentication..." -ForegroundColor Cyan
 
-        $adminHeaders = New-BasicAuthHeader "admin" "admin"
-
-        # Generate a temporary user token directly using default admin credentials.
-        $tokenName = "ephemeral-$([guid]::NewGuid().ToString('N'))"
-
-        # Retry logic for token generation with exponential backoff
-        $tokenResponse = $null
-        $tokenAttempts = 0
-        $maxTokenAttempts = 10
-
-        while ($tokenAttempts -lt $maxTokenAttempts -and -not $tokenResponse) {
-            $tokenAttempts++
-            try {
-                $tokenResponse = Invoke-RestMethod `
-                    -Method Post `
-                    -Uri "$hostUrl/api/user_tokens/generate" `
-                    -Headers $adminHeaders `
-                    -Body @{
-                        name = $tokenName
-                    } `
-                    -TimeoutSec 15
-            }
-            catch {
-                if ($tokenAttempts -lt $maxTokenAttempts) {
-                    $waitTime = [Math]::Min(5 * $tokenAttempts, 30)
-                    Write-Host "  Token generation attempt $tokenAttempts failed, retrying in $waitTime seconds..." -ForegroundColor Yellow
-                    Start-Sleep -Seconds $waitTime
-                }
-                else {
-                    throw "Failed to generate SonarQube token after $maxTokenAttempts attempts: $($_.Exception.Message)"
-                }
-            }
+        if ($SonarUrl -and $externalToken) {
+            $sonarToken = $externalToken
+            Write-Host "Using SONAR_TOKEN from environment/.env." -ForegroundColor Green
         }
+        else {
+            $adminHeaders = New-BasicAuthHeader "admin" $currentAdminPassword
+            $tokenName = "ephemeral-$([guid]::NewGuid().ToString('N'))"
 
-        $sonarToken = $tokenResponse.token
+            $tokenResponse = $null
+            $tokenAttempts = 0
+            $maxTokenAttempts = 10
+
+            while ($tokenAttempts -lt $maxTokenAttempts -and -not $tokenResponse) {
+                $tokenAttempts++
+                try {
+                    $tokenResponse = Invoke-RestMethod `
+                        -Method Post `
+                        -Uri "$hostUrl/api/user_tokens/generate" `
+                        -Headers $adminHeaders `
+                        -Body @{ name = $tokenName } `
+                        -TimeoutSec 15
+                }
+                catch {
+                    if ($tokenAttempts -lt $maxTokenAttempts) {
+                        $waitTime = [Math]::Min(2 * $tokenAttempts, 10)
+                        Write-Host "  Token generation attempt $tokenAttempts failed, retrying in $waitTime seconds..." -ForegroundColor Yellow
+                        Start-Sleep -Seconds $waitTime
+                    }
+                    else {
+                        throw "Failed to generate SonarQube token after $maxTokenAttempts attempts: $($_.Exception.Message)"
+                    }
+                }
+            }
+
+            $sonarToken = $tokenResponse.token
+            $tokenGenerated = [bool]$sonarToken
+        }
 
         if (-not $sonarToken) {
-            throw "Failed to generate a temporary SonarQube token."
+            throw "Failed to obtain a SonarQube token."
         }
 
-        $tokenHeaders = @{
-            Authorization = "Bearer $sonarToken"
-        }
-
-        Write-Host "Temporary authentication initialized." `
-            -ForegroundColor Green
-
-        # Verify container is still running before scanner
-        if ($containerStarted) {
-            try {
-                $running = Invoke-WslDocker @(
-                    "inspect", "-f", "{{.State.Running}}", $containerName
-                )
-                if ($running -notmatch "true") {
-                    $logs = Invoke-WslDocker @("logs", "--tail", "100", $containerName)
-                    throw "SonarQube container stopped unexpectedly after authentication.`nLogs:`n$logs"
-                }
-            }
-            catch {
-                throw "SonarQube container is no longer available after authentication."
-            }
-        }
-
-        # Short wait for server to be ready for scanner
-        Start-Sleep -Seconds 5
-
-        # ----------------------------------------------------
-        # Prepare scanner configuration
-        # ----------------------------------------------------
-
-        $props = @(
-            "sonar.projectKey=$key"
-            "sonar.host.url=$hostUrl"
-            "sonar.sources=$sources"
-            "sonar.inclusions=$inclusions"
-            "sonar.exclusions=$exclusions"
-            "sonar.scm.disabled=true"
-            "sonar.sourceEncoding=UTF-8"
-            "sonar.language=ts"
-            "sonar.typescript.node=22.13.0"
-            "sonar.javascript.environments=browser,node"
-        )
-
-        $tmp = [IO.Path]::GetTempFileName()
-
-        Set-Content -Path $tmp -Value $props -Encoding ASCII
-
-        # Use environment variables instead of exposing the token
-        # in the scanner command-line arguments.
+        # SonarQube 9.9 expects Basic auth (token as username, empty password).
+        $tokenHeaders = New-BasicAuthHeader $sonarToken ""
         $env:SONAR_TOKEN = $sonarToken
 
-        # Remove any previous report-task file.
-        $report = Join-Path (Get-Location) ".scannerwork\report-task.txt"
-
-        if (Test-Path $report) {
-            Remove-Item $report -Force
-        }
+        Write-Host "Authentication initialized." -ForegroundColor Green
 
         # ----------------------------------------------------
-        # Run scanner
+        # Analyze
         # ----------------------------------------------------
 
-        Write-Host "`n[5/7] Running SonarScanner..." -ForegroundColor Cyan
-
-        $scannerArgs = @("-Dproject.settings=$tmp")
-
-        if ($VerboseScanner) {
-            $scannerArgs += "-X"
-        }
-
-        # Run scanner synchronously. The managed SonarQube container remains
-        # running throughout scanner upload, Compute Engine processing, and
-        # the interactive report-review session.
-        $scannerOutput = & sonar-scanner @scannerArgs 2>&1
-        $scannerCode = $LASTEXITCODE
-
-        if ($scannerCode -ne 0) {
-            $exitCode = $scannerCode
-            throw "SonarScanner failed (exit code $scannerCode). Check scanner diagnostics with -VerboseScanner if needed."
-        }
-
-        Write-Host "Scanner execution completed successfully." `
-            -ForegroundColor Green
+        $dashboardUrl = @(Invoke-SonarAnalysis -Scope $scope)[-1]
 
         # ----------------------------------------------------
-        # Wait for Compute Engine processing
+        # Open browser and keep the server alive until the user
+        # explicitly terminates it
         # ----------------------------------------------------
 
-        Write-Host "`n[6/7] Waiting for SonarQube processing..." `
-            -ForegroundColor Cyan
-
-        if (-not (Test-Path $report)) {
-            throw "SonarScanner completed but report-task.txt was not generated. The analysis may not have been submitted."
-        }
-
-        $reportProperties = @{}
-        Get-Content $report | ForEach-Object {
-            if ($_ -match '^([^=]+)=(.*)$') {
-                $reportProperties[$matches[1]] = $matches[2]
-            }
-        }
-
-        $ceTaskUrl = $reportProperties["ceTaskUrl"]
-        $ceTaskId = $reportProperties["ceTaskId"]
-        $dashboardUrl = $reportProperties["dashboardUrl"]
-
-        if (-not $ceTaskId -and $ceTaskUrl -match '[?&]id=([^&]+)') {
-            $ceTaskId = [Uri]::UnescapeDataString($Matches[1])
-        }
-
-        if (-not $ceTaskId) {
-            throw "Unable to locate ceTaskId in report-task.txt. The analysis may not have been submitted correctly."
-        }
-
-        if (-not $dashboardUrl) {
-            $dashboardUrl = "$hostUrl/dashboard?id=$key"
-        }
-
-        # Poll the task through this server's API endpoint rather than relying
-        # on ceTaskUrl's embedded host/proxy URL. This avoids localhost,
-        # port-mapping, and URL-rewrite mismatches.
-        $taskStatusUrl = "$hostUrl/api/ce/task?id=$([Uri]::EscapeDataString($ceTaskId))"
-        $deadline = (Get-Date).AddSeconds($TaskTimeoutSeconds)
-        $analysisCompleted = $false
-        $lastTaskStatus = "PENDING"
-        $lastPollError = $null
-
-        while ((Get-Date) -lt $deadline) {
-            try {
-                $ceResponse = Invoke-RestMethod `
-                    -Uri $taskStatusUrl `
-                    -Headers $tokenHeaders `
-                    -TimeoutSec 20
-
-                $lastTaskStatus = [string]$ceResponse.task.status
-                $lastPollError = $null
-
-                switch ($lastTaskStatus) {
-                    "SUCCESS" {
-                        $analysisCompleted = $true
-                        break
-                    }
-                    "FAILED" {
-                        $errorMessage = $ceResponse.task.errorMessage
-                        if (-not $errorMessage) { $errorMessage = "No server error detail was provided." }
-                        throw "SonarQube server-side analysis failed: $errorMessage"
-                    }
-                    "CANCELED" {
-                        throw "SonarQube analysis was canceled."
-                    }
-                    default {
-                        # Keep terminal output quiet; the detailed analysis
-                        # report is available in SonarQube after completion.
-                        Write-Verbose "Compute Engine task status: $lastTaskStatus"
-                    }
-                }
-            }
-            catch {
-                if ($_.Exception.Message -match 'server-side analysis failed|analysis was canceled') {
-                    throw
-                }
-                $lastPollError = $_.Exception.Message
-                Write-Verbose "Unable to read Compute Engine task status yet: $lastPollError"
-            }
-
-            if ($analysisCompleted) { break }
-            Start-Sleep -Seconds 3
-        }
-
-        if (-not $analysisCompleted) {
-            $timeoutDetail = "Timed out after $TaskTimeoutSeconds seconds waiting for Compute Engine task '$ceTaskId'. Last status: '$lastTaskStatus'."
-            if ($lastPollError) {
-                $timeoutDetail += " Last API error: $lastPollError"
-            }
-            throw $timeoutDetail
-        }
-
-        Write-Host "Analysis successfully processed by SonarQube." `
-            -ForegroundColor Green
-
-        # ----------------------------------------------------
-        # Open browser and keep this terminal session alive
-        # ----------------------------------------------------
-
-        Write-Host "`n[7/7] Opening SonarQube report..." `
-            -ForegroundColor Cyan
+        Write-Host "`n[7/7] Opening SonarQube report..." -ForegroundColor Cyan
         Write-Host "Report URL: $dashboardUrl" -ForegroundColor White
+        Write-Timing "report ready"
 
         Start-Process $dashboardUrl
 
-        Write-Host "`nSonarQube report is open in your browser." `
-            -ForegroundColor Green
-        Write-Host "Keep this terminal open while reviewing the report." `
-            -ForegroundColor Gray
-        Write-Host ""
-        Write-Host "Choose an action when you are finished:" -ForegroundColor Cyan
-        Write-Host "  [T] Terminate session and clean up managed resources"
-        Write-Host "  [C] Close reporting session and clean up managed resources"
+        if ($containerStarted) {
+            Write-Host "`nSonarQube report is open in your browser." -ForegroundColor Green
+            Write-Host "The SonarQube server stays RUNNING while this terminal is waiting." -ForegroundColor Green
+            Write-Host "Closing the browser does NOT stop the server." -ForegroundColor Gray
+            Write-Host "Login: admin / $resolvedAdminPassword" -ForegroundColor White
+            Write-Host ""
+            Write-Host "Commands:" -ForegroundColor Cyan
+            Write-Host "  RESCAN (R)     run the analysis again on this server (no restart), then refresh the browser"
+            Write-Host "  TERMINATE (T)  stop the server and clean up   (Ctrl+C does the same)"
 
-        do {
-            $sessionChoice = (Read-Host "Your choice (T/C)").Trim().ToUpperInvariant()
-            if ($sessionChoice -notin @("T", "C")) {
-                Write-Host "Invalid choice. Enter T or C." -ForegroundColor Yellow
+            while ($true) {
+                $answer = (Read-Host "`nCommand").Trim().ToUpperInvariant()
+
+                if ($answer -in @("T", "TERMINATE")) {
+                    Write-Host "Terminating SonarQube session..." -ForegroundColor Yellow
+                    break
+                }
+
+                if ($answer -in @("R", "RESCAN")) {
+                    try {
+                        Assert-ContainerRunning -Name $containerName -Context "before rescan"
+
+                        $scope = Get-AnalysisScope
+
+                        if ($scope.Skip) {
+                            continue
+                        }
+
+                        $dashboardUrl = @(Invoke-SonarAnalysis -Scope $scope)[-1]
+
+                        Write-Host "`nReport updated. Refresh the browser tab: $dashboardUrl" `
+                            -ForegroundColor Green
+                    }
+                    catch {
+                        Write-Host "`nRESCAN failed: $($_.Exception.Message)" -ForegroundColor Red
+
+                        try {
+                            Assert-ContainerRunning -Name $containerName -Context "after failed rescan"
+                            Write-Host "The server is still running. Fix the problem and type RESCAN again." `
+                                -ForegroundColor Gray
+                        }
+                        catch {
+                            Write-Host "WARNING: $($_.Exception.Message)" -ForegroundColor Yellow
+                            $containerStarted = $false
+                            break
+                        }
+                    }
+
+                    continue
+                }
+
+                try {
+                    Assert-ContainerRunning -Name $containerName -Context "report review"
+                    Write-Host "Server is still running at $hostUrl. Type RESCAN or TERMINATE." `
+                        -ForegroundColor Gray
+                }
+                catch {
+                    Write-Host "WARNING: $($_.Exception.Message)" -ForegroundColor Yellow
+                    $containerStarted = $false
+                    break
+                }
             }
-        } while ($sessionChoice -notin @("T", "C"))
-
-        if ($sessionChoice -eq "T") {
-            Write-Host "Terminating SonarQube session..." -ForegroundColor Yellow
         }
         else {
-            Write-Host "Closing reporting session..." -ForegroundColor Yellow
+            Write-Host "`nUsing an existing server; nothing to wait for." -ForegroundColor Gray
         }
-    }
-    else {
-        # Analysis was skipped (no files to analyze)
-        Write-Host "`nAnalysis skipped - no files matched the criteria." `
-            -ForegroundColor Yellow
     }
 }
 catch {
     Write-Host "`nERROR: $($_.Exception.Message)" -ForegroundColor Red
 
-    # Show container logs when server-side operations fail.
     if ($containerStarted) {
-        Write-Host "`n--- SonarQube Container Logs ---" `
-            -ForegroundColor DarkYellow
+        Write-Host "`n--- SonarQube Container Logs ---" -ForegroundColor DarkYellow
 
         try {
-            $logs = Invoke-WslDocker @(
-                "logs", "--tail", "100", $containerName
-            )
-
-            Write-Host $logs
+            Write-Host (Invoke-WslDocker @("logs", "--tail", "100", $containerName))
         }
         catch {
-            if ($containerLogs) {
-                Write-Host "Using captured initial logs:"
-                Write-Host $containerLogs
-            }
-            else {
-                Write-Host "Container logs are no longer available."
-            }
+            Write-Host "Container logs are no longer available."
         }
     }
 
@@ -715,16 +850,14 @@ catch {
     }
 }
 finally {
-    # --------------------------------------------------------
-    # Revoke temporary authentication
-    # --------------------------------------------------------
-
-    if ($sonarToken -and $tokenHeaders -and $hostUrl) {
+    # Revoke the token only on an existing server (a managed container is
+    # removed below anyway).
+    if ($tokenGenerated -and $SonarUrl -and $adminHeaders -and $hostUrl -and $tokenName) {
         try {
             Invoke-RestMethod `
                 -Method Post `
                 -Uri "$hostUrl/api/user_tokens/revoke" `
-                -Headers $tokenHeaders `
+                -Headers $adminHeaders `
                 -Body @{ name = $tokenName } `
                 -TimeoutSec 10 | Out-Null
         }
@@ -733,34 +866,26 @@ finally {
         }
     }
 
-    # --------------------------------------------------------
-    # Stop and remove temporary container
-    # --------------------------------------------------------
-
+    # Reached only after explicit TERMINATE / Ctrl+C, or on failure.
     if ($containerStarted) {
-        Write-Host "`nCleaning up SonarQube container..." `
-            -ForegroundColor Cyan
+        Write-Host "`nCleaning up SonarQube container..." -ForegroundColor Cyan
 
         try {
-            # Force-remove only the ephemeral container created by this script.
-            # `docker rm -f` stops it if necessary and removes it in one operation.
             Invoke-WslDocker @("rm", "-f", $containerName) | Out-Null
 
-            Write-Host "Managed SonarQube container stopped and removed." `
-                -ForegroundColor Green
+            Write-Host "Managed SonarQube container stopped and removed." -ForegroundColor Green
         }
         catch {
             Write-Warning "Container cleanup failed: $($_.Exception.Message)"
         }
     }
-    else {
+    elseif ($SonarUrl) {
         Write-Host "`nExisting SonarQube server was not started by this script; leaving it running." `
             -ForegroundColor Gray
     }
 
-    # --------------------------------------------------------
-    # Restore environment
-    # --------------------------------------------------------
+    # Must come after `docker rm`, which still needs WSL.
+    Stop-WslKeepAlive $wslKeepAlive
 
     if ($sonarTokenWasSet) {
         $env:SONAR_TOKEN = $previousSonarToken
@@ -769,12 +894,14 @@ finally {
         Remove-Item Env:SONAR_TOKEN -ErrorAction SilentlyContinue
     }
 
-    if ($tmp -and (Test-Path $tmp)) {
-        Remove-Item $tmp -Force -ErrorAction SilentlyContinue
+    if ($null -ne $previousScannerOpts) {
+        $env:SONAR_SCANNER_OPTS = $previousScannerOpts
+    }
+    else {
+        Remove-Item Env:SONAR_SCANNER_OPTS -ErrorAction SilentlyContinue
     }
 
-    Write-Host "`n Analysis Finished (Exit Code: $exitCode) " `
-        -ForegroundColor Cyan
+    Write-Host "`n Analysis Finished (Exit Code: $exitCode) " -ForegroundColor Cyan
 }
 
 exit $exitCode
