@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SCENARIOS } from '../../../experiments/scenarios/catalog.js';
-import { FIELD_ORDER } from '../../../src/application/demo/proof-tampering.js';
+import { FIELD_ORDER } from '../../../src/application/simulation/proof-tampering.js';
 import { SCENARIO_CATALOG } from '../../../src/application/index.js';
 import { BN254_FIELD_ORDER } from '../../../src/infrastructure/index.js';
 

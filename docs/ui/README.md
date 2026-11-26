@@ -4,12 +4,13 @@ Dokumen ini menurunkan rancangan di [`docs/architecture/ui-demo.md`](../architec
 bisa dikerjakan. Status: frontend `web/` berjalan dengan data mock atau lewat HTTP, dan adapter Express (tahap U1) sudah ada,
 lihat [server.md](server.md). Kontrak di sini adalah syarat yang dipenuhi adapter itu.
 
-| Dokumen                            | Isi                                                                                      |
-| ---------------------------------- | ---------------------------------------------------------------------------------------- |
-| [contract.md](contract.md)         | Kontrak server dan UI: tipe, endpoint, SSE, katalog event, pemetaan penolakan            |
-| [server.md](server.md)             | Adapter Express: cara menjalankan, dokumentasi API (Scalar), struktur, cakupan dan batas |
-| [architecture.md](architecture.md) | Arsitektur `web/`: lapisan, aturan dependensi, modul, state Jotai, graf React Flow       |
-| [screens.md](screens.md)           | Halaman, komponen, state kosong dan galat, teks antarmuka, aksesibilitas, token desain   |
+| Dokumen                            | Isi                                                                                           |
+| ---------------------------------- | --------------------------------------------------------------------------------------------- |
+| [contract.md](contract.md)         | Kontrak server dan UI: tipe, endpoint, SSE, katalog event, pemetaan penolakan                 |
+| [walkthrough.md](walkthrough.md)   | Panduan menjalankan demo: persiapan, alur Issuer ke Verifier, simulator, skenario, dan aturan |
+| [server.md](server.md)             | Adapter Express: cara menjalankan, dokumentasi API (Scalar), struktur, cakupan dan batas      |
+| [architecture.md](architecture.md) | Arsitektur `web/`: lapisan, aturan dependensi, modul, state Jotai, graf React Flow            |
+| [screens.md](screens.md)           | Halaman, komponen, state kosong dan galat, teks antarmuka, aksesibilitas, token desain        |
 
 ## Tumpukan
 
