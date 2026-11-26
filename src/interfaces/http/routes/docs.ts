@@ -23,7 +23,7 @@ export const docsRoutes = (): Router => {
     apiReference({
       url: '/api/openapi.json',
       pageTitle: 'ZK-Credential API',
-      // Serve the bundle from this server: the default CDN would break an offline thesis demo.
+      // Serve the bundle from this server: the default CDN would break an offline presentation.
       cdn: `${SCALAR_ASSETS_PATH}/standalone.js`,
     }),
   );

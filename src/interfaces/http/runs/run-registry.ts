@@ -22,7 +22,7 @@ export type RunExecutor = (run: { readonly runId: string; readonly emit: (event:
 const KEPT_RUNS = 20;
 
 /**
- * In-memory home of demo runs: one at a time, and the events of recent runs are kept so a client that
+ * In-memory home of runs: one at a time, and the events of recent runs are kept so a client that
  * connects late is replayed from `seq = 0`. Nothing here knows about HTTP.
  */
 export const createRunRegistry = (logger: ErrorLogger) => {

@@ -39,7 +39,7 @@ export function ControlsBar() {
 
   return (
     <div className="flex flex-wrap items-end gap-4 rounded-lg border bg-card p-4">
-      <div className="grid w-full gap-1.5 sm:w-72">
+      <div className="grid gap-1.5 flex-1 sm:w-96">
         <Label>Konfigurasi</Label>
         <Select value={configuration} onValueChange={changeConfiguration} disabled={running}>
           <SelectTrigger aria-label="Konfigurasi">
@@ -54,7 +54,7 @@ export function ControlsBar() {
           </SelectContent>
         </Select>
       </div>
-      <div className="grid w-full gap-1.5 sm:w-96">
+      <div className="grid gap-1.5 flex-1 sm:w-96">
         <Label>Skenario</Label>
         <Select value={scenarioId} onValueChange={setScenarioId} disabled={running}>
           <SelectTrigger aria-label="Skenario">

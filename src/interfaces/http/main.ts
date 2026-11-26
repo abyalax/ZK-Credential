@@ -23,7 +23,7 @@ const container = await createContainer(loadConfig(process.env), {
 });
 
 const server = await startHttpServer({ services: container }, loadHttpConfig(process.env));
-console.log(`ZK-Credential demo API on ${server.url}`);
+console.log(`ZK-Credential API on ${server.url}`);
 console.log(`API docs (Scalar): ${server.url}/api/docs`);
 
 let stopping = false;

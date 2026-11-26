@@ -27,12 +27,12 @@ export const paths: Record<string, Json> = {
     get: operation(
       'Issuer',
       'List issued credentials',
-      'Everything the issuer signed in this demo, oldest first. Carries credential attributes by design.',
+      'Everything the issuer signed, oldest first. Carries credential attributes by design.',
       {
         responses: { 200: json(arrayOf('CredentialView'), 'Credentials'), ...SERVER_ERROR },
       },
     ),
-    post: operation('Issuer', 'Issue a credential', 'Signs a credential bound to the demo holder key (`makeIssueCredential`).', {
+    post: operation('Issuer', 'Issue a credential', 'Signs a credential bound to the holder key (`makeIssueCredential`).', {
       requestBody: body('IssueCredentialRequest'),
       responses: {
         200: json(
@@ -45,7 +45,7 @@ export const paths: Record<string, Json> = {
     }),
   },
   '/api/holder/credentials': {
-    get: operation('Holder', 'Wallet', 'Credentials bound to the demo holder key.', {
+    get: operation('Holder', 'Wallet', 'Credentials bound to the holder key.', {
       responses: { 200: json(arrayOf('CredentialView'), 'Wallet'), ...SERVER_ERROR },
     }),
   },
@@ -53,7 +53,7 @@ export const paths: Record<string, Json> = {
     post: operation(
       'Holder',
       'Build a proof',
-      'Proves GPA >= threshold for a challenge (`makeGenerateProof`). The holder key sits in the server: a demo simplification.',
+      'Proves GPA >= threshold for a challenge (`makeGenerateProof`). The holder key sits in the server.',
       {
         requestBody: body('CreateProofRequest'),
         responses: {

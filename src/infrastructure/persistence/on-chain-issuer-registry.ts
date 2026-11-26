@@ -44,13 +44,23 @@ export const createOnChainIssuerRegistry = ({
   contractAddress,
   issuers,
 }: OnChainIssuerRegistryOptions): OnChainIssuerRegistry => {
-  const isTrusted = async (publicKey: Issuer['publicKey'] | string) =>
-    publicClient.readContract({
-      address: contractAddress,
-      abi: issuerRegistryAbi,
-      functionName: 'isTrusted',
-      args: [await issuerKeyHash(publicKey)],
-    });
+  const isTrusted = async (publicKey: Issuer['publicKey'] | string) => {
+    try {
+      return await publicClient.readContract({
+        address: contractAddress,
+        abi: issuerRegistryAbi,
+        functionName: 'isTrusted',
+        args: [await issuerKeyHash(publicKey)],
+      });
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('returned no data')) {
+        throw new Error(
+          `Contract call failed at address ${contractAddress}. The contract may not be deployed or the address is incorrect. Please ensure your Hardhat node is running and contracts are deployed (run: pnpm chain:deploy).`,
+        );
+      }
+      throw error;
+    }
+  };
 
   return {
     isTrusted,

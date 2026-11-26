@@ -5,6 +5,17 @@ allowBuilds:
   esbuild: true
   # Optional native addon pulled in by circomlibjs; it falls back to pure JS, so skip the build.
   blake-hash: false
-
+  vue-demi: true
 minimumReleaseAgeExclude:
   - lucide-react@1.79.0
+permissions:
+  hardhat:
+    skills: [hardhat, hardhat-toolbox-mocha-ethers, hardhat-toolbox-viem]
+skills:
+  dirs:
+    - .agent/skills
+    - .agents/skills
+    - .claude/skills
+    - .cursor/skills
+    - .gemini/skills
+    - .github/skills

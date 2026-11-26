@@ -18,7 +18,7 @@ export const issuerRoutes = (services: HttpServices): Router => {
 
   router.post('/issuer/credentials', async (req, res) => {
     const input = parseIssueCredential(req.body);
-    // The demo holder lives in the server, so the credential is bound to its key.
+    // The holder lives in the server, so the credential is bound to its key.
     const holder = await services.holderKeyring.current();
     const result = await services.issueCredential({
       ...input,
