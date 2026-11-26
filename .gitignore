@@ -18,7 +18,7 @@ circuits/artifacts/*
 *.ptau
 *.zkey
 .claude*
-.agent*
+.agents*
 .cursor*
 .gemini*
 .github*
