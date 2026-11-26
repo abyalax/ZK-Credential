@@ -48,7 +48,7 @@ const eventProblem = (value: unknown, index: number): string | undefined => {
 
 const eventsProblem = (events: unknown): string | undefined => {
   if (!Array.isArray(events) || events.length === 0) return 'events must be a non-empty array';
-  const broken = events.map(eventProblem).find((problem) => problem !== undefined);
+  const broken = events.map((e, i) => eventProblem(e, i)).find((problem) => problem !== undefined);
   if (broken) return broken;
   const seqs = (events as RunEvent[]).map((event) => event.seq);
   return seqs.every((seq, index) => index === 0 || seq > (seqs[index - 1] ?? 0)) ? undefined : 'event seq must strictly increase';
@@ -103,7 +103,7 @@ export const parseRecordingIndex = (input: unknown): Result<RecordingIndex, stri
   if (!isObject(input) || input.version !== RECORDING_VERSION || !Array.isArray(input.recordings)) {
     return err('index.json must be a version 1 recording index');
   }
-  const problem = input.recordings.map(entryProblem).find((found) => found !== undefined);
+  const problem = input.recordings.map((e, i) => entryProblem(e, i)).find((found) => found !== undefined);
   return problem ? err(problem) : ok(input as unknown as RecordingIndex);
 };
 

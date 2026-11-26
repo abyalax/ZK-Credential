@@ -14,7 +14,10 @@ export function SimulatorPage() {
   const load = useSetAtom(loadScenariosAtom);
   const stop = useSetAtom(stopRunAtom);
   useEffect(() => {
-    load();
+    load().catch((error: unknown) => {
+      console.error('Failed to load scenarios:', error);
+    });
+
     return () => stop();
   }, [load, stop]);
 
